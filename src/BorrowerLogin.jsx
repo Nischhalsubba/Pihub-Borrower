@@ -40,7 +40,7 @@ export default function BorrowerLogin({ onAuthenticated }) {
           <p className="ph-subtitle">Access financing applications, company information, documents and closing actions.</p>
 
           <div className="ph-callout" role="note">
-            This access screen belongs only to the Borrower workspace. Investor, Advisory and Admin sign-in are not available here.
+            This sign-in is dedicated to the Borrower workspace.
           </div>
 
           <form className="ph-login-form" onSubmit={submit}>
@@ -81,7 +81,7 @@ export default function BorrowerLogin({ onAuthenticated }) {
         <div>
           <div className="ph-eyebrow">Origination workspace</div>
           <h2>One borrower workspace for the financing journey.</h2>
-          <p>Prepare the financing request, maintain borrower information, respond to PiHub requests and follow the deal through closing without exposing access to other PiHub modules.</p>
+          <p>Prepare the financing request, maintain borrower information, respond to PiHub requests and follow the deal through closing from one dedicated workspace.</p>
         </div>
       </aside>
     </main>
