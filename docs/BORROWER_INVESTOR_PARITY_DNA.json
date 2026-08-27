@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "name": "PiHub Borrower Investor-Parity DNA",
+    "description": "Borrower financing workflows rendered in the current PiHub Investor visual and interaction system. Figma remains a functional-flow reference only.",
+    "source_references": ["MASTER.md", "app/public/assets/css/pihub-shell.css", "packages/ui/src/investor-design-system.css", "app/src/components/general/Header.js"],
+    "created_at": "2026-08-26"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "cool institutional neutral with cobalt accent",
+      "primary": {"hex": "#2457E6", "role": "primary actions and focus hierarchy"},
+      "secondary": {"hex": "#0B1220", "role": "global navigation rail and brand anchor"},
+      "accent": {"hex": "#5F80FF", "role": "small signal accents and current-state markers"},
+      "neutral": {"scale": ["#FFFFFF", "#F8FAFC", "#F6F8FC", "#E2E8F0", "#CBD5E1", "#64748B", "#475569", "#0F172A"], "usage": "workspace surfaces, borders, secondary copy and primary text"},
+      "semantic": {"success": "#15803D", "warning": "#B45309", "error": "#B42318", "info": "#175CD3"},
+      "surface": {"background": "#F6F8FC", "card": "#FFFFFF", "elevated": "#FFFFFF"},
+      "contrast_strategy": "dark-on-light workspace with a high-contrast midnight rail and WCAG-AA semantic pairs"
+    },
+    "typography": {
+      "type_scale": {
+        "display": {"size": "36px", "weight": "600", "line_height": "1.12", "tracking": "-0.02em"},
+        "heading_1": {"size": "30px", "weight": "600", "line_height": "1.2", "tracking": "-0.018em"},
+        "heading_2": {"size": "24px", "weight": "600", "line_height": "1.25", "tracking": "-0.012em"},
+        "heading_3": {"size": "18px", "weight": "600", "line_height": "1.35", "tracking": "0"},
+        "body": {"size": "15px", "weight": "400", "line_height": "1.55", "tracking": "0"},
+        "body_small": {"size": "13px", "weight": "400", "line_height": "1.5", "tracking": "0"},
+        "caption": {"size": "11px", "weight": "500", "line_height": "1.4", "tracking": "0"},
+        "overline": {"size": "10px", "weight": "600", "line_height": "1.3", "tracking": "0.08em"}
+      },
+      "font_families": {"heading": "IBM Plex Sans, Inter, system-ui, sans-serif", "body": "IBM Plex Sans, Inter, system-ui, sans-serif", "mono": "IBM Plex Mono, SFMono-Regular, Consolas, monospace"},
+      "font_style_notes": "institutional sans with tabular and mono treatment for money, dates, IDs and dense data"
+    },
+    "spacing": {"base_unit": "4px", "scale": ["4px", "8px", "12px", "16px", "24px", "32px", "48px", "64px"], "content_density": "compact-comfortable", "section_rhythm": "24-32px major sections with 8-16px internal grouping"},
+    "layout": {"grid_system": "232px persistent rail plus flexible workspace", "max_content_width": "1440px", "columns": "12-column-capable content grid with 2-4 column dashboard compositions", "gutter": "24-40px desktop and 18px compact", "breakpoints": ["375px", "768px", "1024px", "1440px"], "alignment_tendency": "strict grid"},
+    "shape": {"border_radius": {"small": "8px", "medium": "12px", "large": "16px", "pill": "999px"}, "border_usage": "subtle 1px borders first", "divider_style": "cool neutral 1px dividers"},
+    "elevation": {"shadow_style": "soft diffused and restrained", "levels": {"low": "0 1px 2px rgba(15,23,42,.04)", "medium": "0 8px 24px rgba(15,23,42,.06)", "high": "0 20px 50px rgba(15,23,42,.10)"}, "depth_cues": "borders, surface contrast and rare floating-menu shadows"},
+    "iconography": {"style": "outline", "stroke_weight": "1.8px", "size_scale": ["16px", "18px", "20px"], "preferred_set": "PiHub outline SVG and Boxicons visual language"},
+    "motion": {"easing": "cubic-bezier(0.2,0,0,1)", "duration_scale": {"micro": "120ms", "normal": "220ms", "macro": "360ms"}, "entrance_pattern": "8-12px translate plus opacity and decisive ease-out", "exit_pattern": "shorter opacity/scale exit with ease-in", "philosophy": "corporate functional motion with no bounce"},
+    "components": {"button_style": "44px controls, 10px radius, cobalt primary and bordered white secondary", "input_style": "44-48px white inputs with visible labels, neutral border and cobalt focus ring", "card_style": "white border-first surfaces with low shadow and compact headers", "navigation_pattern": "Investor-style persistent midnight rail plus 68px utility header", "modal_style": "14px white floating surface with high shadow and explicit focus handling", "list_style": "dense scannable rows with subtle hover and explicit status", "component_notes": "Borrower reuses Investor geometry and interaction states; only workflow composition differs"}
+  },
+  "design_style": {
+    "aesthetic": {"mood": ["precise", "calm", "institutional", "trustworthy", "contemporary"], "visual_metaphor": "financial command desk", "era_influence": "modern enterprise SaaS", "genre": "institutional fintech operations", "personality_traits": ["meticulous", "controlled", "decisive", "professional"], "adjectives": ["dense", "clean", "restrained", "data-first"]},
+    "visual_language": {"complexity": "moderate", "ornamentation": "subtle accents", "whitespace_usage": "controlled whitespace around dense data", "visual_weight_distribution": "dark navigation balanced by light data surfaces", "focal_strategy": "priority/action first and supporting data second", "contrast_level": "high functional contrast", "texture_usage": "none"},
+    "composition": {"hierarchy_method": "typographic hierarchy plus spatial grouping and status accents", "balance_type": "asymmetric dashboard grid", "flow_direction": "top-left priority to right-side utilities then downward task progression", "grouping_strategy": "cards, tapes, tables and rails grouped by workflow ownership", "negative_space_role": "separates decision groups without making the dashboard hollow"},
+    "imagery": {"photo_treatment": "avatar only", "illustration_style": "none in operational workspace", "graphic_elements": "small SVG icons and status markers", "pattern_usage": "none", "image_shape": "small rounded-square avatar/logo only"},
+    "interaction_feel": {"feedback_style": "immediate restrained state feedback", "hover_behavior": "100-120ms border/background shift with no card zoom", "transition_personality": "snappy controlled", "loading_style": "skeleton or progress where needed and no decorative loops", "microinteraction_density": "low to moderate"},
+    "brand_voice_in_ui": {"tone": "clear and operational", "formality": "professional", "cta_style": "direct imperative", "empty_state_approach": "explain what is missing and the next action", "error_tone": "specific cause plus recovery action"}
+  },
+  "visual_effects": {
+    "overview": {"effect_intensity": "subtle-accent", "performance_tier": "lightweight", "fallback_strategy": "direct static state under reduced motion or constrained devices", "primary_technology": "CSS plus GSAP route/menu motion"},
+    "background_effects": {"type": "none", "description": "Operational pages remain visually static", "technology": "CSS", "params": {"color_palette": ["#F6F8FC"], "speed": "0", "density": "0", "opacity": "1", "blend_mode": "normal"}},
+    "particle_systems": {"enabled": false, "type": "none", "description": "No particles in borrower workflows", "technology": "none", "params": {"count": 0, "shape": "none", "size_range": "none", "movement_pattern": "none", "color_behavior": "none", "interaction": "none", "spawn_area": "none"}},
+    "3d_elements": {"enabled": false, "type": "none", "description": "Three.js is intentionally excluded from dense operational routes and remains reserved for authentication or brand surfaces", "technology": "Three.js not mounted", "params": {"renderer": "none", "lighting": "none", "camera": "none", "materials": "none", "geometry": "none", "post_processing": [], "interaction_model": "none"}},
+    "shader_effects": {"enabled": false, "type": "none", "description": "No shaders in operational UI", "technology": "none", "params": {"uniforms": {}, "vertex_manipulation": "none", "fragment_output": "none", "noise_type": "none", "distortion": "none"}},
+    "scroll_effects": {"parallax": {"enabled": false,"layers": 0,"depth_range": "0","speed_curve": "none"},"scroll_triggered_animations": {"enabled": false,"trigger_points": [],"animation_type": "none","scrub_behavior": "none"},"scroll_morphing": {"enabled": false,"description": "none"}},
+    "text_effects": {"type": "none","description": "No decorative text animation","technology": "none","params": {"split_strategy": "none","animation_per_unit": "none","stagger": "0","effect_style": "none"}},
+    "cursor_effects": {"enabled": false,"type": "none","description": "System cursor retained","params": {"shape": "system","size": "system","blend_mode": "normal","trail": "none","interaction_zone": "none"}},
+    "image_effects": {"type": "none","description": "Avatar and content images do not distort","technology": "CSS","params": {"filter_pipeline": "none","hover_transform": "none","reveal_animation": "opacity only if needed","distortion_type": "none"}},
+    "glassmorphism_neumorphism": {"enabled": false,"style": "none","params": {"blur_radius": "0","transparency": "0","border_treatment": "1px solid neutral","shadow_type": "soft diffused","light_source_angle": "none"}},
+    "canvas_drawings": {"enabled": false,"type": "none","description": "none","technology": "none","params": {"draw_method": "none","animation_loop": "none","color_scheme": "none","responsiveness": "none","interaction": "none"}},
+    "svg_animations": {"enabled": true,"type": "state rotation and transform only","description": "Chevron and small state/icon transitions","params": {"animation_method": "CSS or GSAP transform","path_morphing": false,"stroke_animation": false,"filter_effects": "none"}},
+    "composite_notes": "Use GSAP only where sequencing improves orientation, such as route entrance and the account menu. Three.js was reviewed and deliberately excluded from Borrower operational pages because WebGL adds GPU cost without improving task clarity."
+  }
+}
