@@ -30,6 +30,7 @@
 .ph-app[data-workspace="borrower"] .ph-workspace-badge {
   flex: 0 0 auto !important;
   min-height: 32px !important;
+  margin-left: 0 !important;
   padding: 0 10px !important;
   border-color: #d7e2ff !important;
   border-radius: 9px !important;
@@ -87,7 +88,7 @@
 }
 
 .ph-app[data-workspace="borrower"] .ph-user-card {
-  min-width: 206px !important;
+  min-width: 218px !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -246,6 +247,43 @@
     padding-bottom: 44px !important;
   }
 
+  .ph-app[data-workspace="borrower"] .ph-workspace-context {
+    display: none !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-topbar-controls {
+    gap: 6px !important;
+    padding: 7px 12px !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-environment-chip {
+    display: none !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-command-trigger {
+    width: 44px !important;
+    min-width: 44px !important;
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    padding: 0 !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-command-trigger > span,
+  .ph-app[data-workspace="borrower"] .ph-command-trigger kbd {
+    display: none !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-user-copy {
+    display: none !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-user-card {
+    width: 86px !important;
+    min-width: 86px !important;
+    grid-template-columns: 32px auto !important;
+    margin-left: 0 !important;
+  }
+
   .ph-app[data-workspace="borrower"] .ph-page-head {
     align-items: flex-start !important;
   }
@@ -253,6 +291,17 @@
   .ph-app[data-workspace="borrower"] .ph-dashboard-grid,
   .ph-app[data-workspace="borrower"] .ph-deal-band {
     grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .ph-app[data-workspace="borrower"] .ph-topbar-controls {
+    padding-left: 8px !important;
+    padding-right: 10px !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-language {
+    min-width: 0 !important;
   }
 }
 
