@@ -31,7 +31,7 @@ const ICONS = {
   company: 'M4 21V8l8-4 8 4v13M9 21v-5h6v5',
   project: 'M3 21h18M5 21V9l7-5 7 5v12',
   financials: 'M4 19V9M10 19V5M16 19v-7M22 19H2',
-  documents: 'M6 3h9l4 4 4v14H6zM9 13h7M9 17h5',
+  documents: 'M6 3h9l4 4v14H6zM9 13h7M9 17h5',
   requests: 'M4 5h16v12H8l-4 4zM8 9h8M8 13h5',
   closing: 'M4 12l5 5L20 6M4 18h12',
   account: 'M4 21a8 8 0 0 1 16 0M8 8a4 4 0 1 0 8 0',
