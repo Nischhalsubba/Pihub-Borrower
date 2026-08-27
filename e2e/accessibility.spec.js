@@ -9,6 +9,13 @@ const assertPage = async page => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(2);
 };
 
+test('Borrower-only login stays WCAG-clean and contained', async ({ page }) => {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('heading', { name: 'Borrower login' })).toBeVisible();
+  await assertPage(page);
+});
+
 test('Borrower overview, creation, financing and account center stay WCAG-clean and contained', async ({ page }) => {
   await open(page);
   await assertPage(page);
