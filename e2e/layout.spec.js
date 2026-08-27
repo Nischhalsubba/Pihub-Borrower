@@ -34,6 +34,7 @@ test('borrower wide dashboard uses a fluid enterprise canvas with aligned topbar
       workspaceToStageLeft: workspaceBadgeRect.left - stageRect.left,
       accountToStageRight: accountRect.right - stageRect.right,
       sidebarWidth: sidebarRect.width,
+      topbarTop: topbarRect.top,
       topbarHeight: topbarRect.height,
       priorityIconWidth: priorityIconRect.width,
       priorityIconHeight: priorityIconRect.height,
@@ -53,6 +54,7 @@ test('borrower wide dashboard uses a fluid enterprise canvas with aligned topbar
   expect(Math.abs(layout.accountToStageRight)).toBeLessThanOrEqual(2);
   expect(layout.sidebarWidth).toBeGreaterThanOrEqual(231);
   expect(layout.sidebarWidth).toBeLessThanOrEqual(233);
+  expect(Math.abs(layout.topbarTop)).toBeLessThanOrEqual(1);
   expect(layout.topbarHeight).toBeGreaterThanOrEqual(67);
   expect(layout.topbarHeight).toBeLessThanOrEqual(69);
   expect(layout.priorityIconWidth).toBeGreaterThanOrEqual(35);
@@ -60,6 +62,67 @@ test('borrower wide dashboard uses a fluid enterprise canvas with aligned topbar
   expect(layout.priorityIconHeight).toBeGreaterThanOrEqual(35);
   expect(layout.priorityIconHeight).toBeLessThanOrEqual(37);
   expect(layout.overflow).toBeLessThanOrEqual(2);
+});
+
+test('skip navigation is keyboard-only and never creates a shell row', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await open(page);
+
+  const skip = page.getByRole('link', { name: 'Skip to main content' });
+  await expect(skip).toHaveCSS('position', 'fixed');
+  await expect(skip).toHaveCSS('opacity', '0');
+
+  const before = await page.locator('.ph-topbar').boundingBox();
+  expect(Math.abs(before?.y || 0)).toBeLessThanOrEqual(1);
+
+  await page.keyboard.press('Tab');
+  await expect(skip).toBeFocused();
+  await expect(skip).toHaveCSS('opacity', '1');
+
+  const after = await page.locator('.ph-topbar').boundingBox();
+  expect(Math.abs(after?.y || 0)).toBeLessThanOrEqual(1);
+});
+
+test('borrower overview composition keeps actions, progress and deal metadata in separate alignment lanes', async ({ page }) => {
+  await page.setViewportSize({ width: 2048, height: 1053 });
+  await open(page);
+
+  const geometry = await page.evaluate(() => {
+    const style = selector => getComputedStyle(document.querySelector(selector));
+    const rect = selector => document.querySelector(selector)?.getBoundingClientRect();
+    const attention = document.querySelector('.ph-attention-row');
+    const attentionTitle = attention?.querySelector('span:first-child')?.getBoundingClientRect();
+    const attentionStatus = attention?.querySelector('.ph-status')?.getBoundingClientRect();
+    const stage = document.querySelector('.ph-stage-step');
+    const stageCopy = stage?.querySelector('.ph-stage-copy')?.getBoundingClientRect();
+    const stageMeta = stage?.querySelector('.ph-stage-meta')?.getBoundingClientRect();
+    const priority = rect('.ph-priority-strip');
+    const priorityAction = rect('.ph-priority-strip > .ph-button');
+    const dealItem = document.querySelector('.ph-deal-band > div');
+    return {
+      focusDisplay: style('.ph-focus-row').display,
+      priorityDisplay: style('.ph-priority-strip').display,
+      panelHeadDisplay: style('.ph-panel-head').display,
+      attentionDisplay: style('.ph-attention-row').display,
+      stageDisplay: style('.ph-stage-step').display,
+      dealItemDisplay: getComputedStyle(dealItem).display,
+      attentionSeparated: Boolean(attentionTitle && attentionStatus && attentionTitle.right <= attentionStatus.left + 1),
+      stageSeparated: Boolean(stageCopy && stageMeta && stageCopy.right <= stageMeta.left + 1),
+      priorityActionInside: Boolean(priority && priorityAction && priorityAction.right <= priority.right && priorityAction.left >= priority.left),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+
+  expect(geometry.focusDisplay).toBe('flex');
+  expect(geometry.priorityDisplay).toBe('flex');
+  expect(geometry.panelHeadDisplay).toBe('flex');
+  expect(geometry.attentionDisplay).toBe('grid');
+  expect(geometry.stageDisplay).toBe('grid');
+  expect(geometry.dealItemDisplay).toBe('grid');
+  expect(geometry.attentionSeparated).toBe(true);
+  expect(geometry.stageSeparated).toBe(true);
+  expect(geometry.priorityActionInside).toBe(true);
+  expect(geometry.overflow).toBeLessThanOrEqual(2);
 });
 
 test('borrower cards, filters and actions inherit exact Investor primitives', async ({ page }) => {
