@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const CENTRAL_LOGIN = 'https://pihub-investor.vercel.app';
 const ADVISORY_ORIGIN = 'https://pihub-advisory-nischhalsubbas-projects.vercel.app';
-const stubCentral = async page => page.route(`${CENTRAL_LOGIN}/**`, route => route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>Central PiHub sign in</h1>' }));
 const open = page => page.goto('/?pihub_demo_access=borrower&source=investor-access');
 const routes = [
   ['Financing products', '/products', 'Find financing'],
@@ -210,17 +208,36 @@ test('borrower profile menu routes, profile editing and password reset work end 
   await expect(page.getByText(/Password reset flow completed in demo mode/)).toBeVisible();
 });
 
-test('borrower logout remains inside the Investor-style account dropdown', async ({ page }) => {
+test('borrower logout returns to the local borrower-only login', async ({ page }) => {
   await open(page);
   await page.getByRole('button', { name: 'Open account menu' }).click();
   await expect(page.getByRole('menu')).toBeVisible();
-  await stubCentral(page);
   await page.getByRole('menuitem', { name: 'Logout', exact: true }).click();
-  await expect(page).toHaveURL(`${CENTRAL_LOGIN}/login/borrower`);
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('heading', { name: 'Borrower login' })).toBeVisible();
 });
 
-test('borrower direct visit redirects centrally', async ({ page }) => {
-  await stubCentral(page);
+test('borrower direct visit stays local and exposes only borrower access', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveURL(`${CENTRAL_LOGIN}/login/borrower`);
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('heading', { name: 'Borrower login' })).toBeVisible();
+  await expect(page.getByLabel('Email Address')).toHaveValue('borrower.demo@pihub.local');
+  await expect(page.getByRole('button', { name: 'Open Borrower' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Investor', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Advisory', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Admin', exact: true })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Open Borrower' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: 'Financing overview' })).toBeVisible();
+});
+
+test('non-borrower credentials cannot authenticate in the borrower repository', async ({ page }) => {
+  await page.goto('/login/advisory');
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel('Email Address').fill('advisory.demo@pihub.local');
+  await page.getByLabel('Password').fill('DemoAdvisory1!');
+  await page.getByRole('button', { name: 'Open Borrower' }).click();
+  await expect(page.getByRole('alert')).toContainText('incorrect');
+  await expect(page.getByRole('heading', { name: 'Borrower login' })).toBeVisible();
 });

@@ -4,11 +4,11 @@ import {
   clearDemoSession,
   consumeDemoAccessHandoff,
   readDemoSession,
-  redirectToCentralAccess,
 } from '../packages/platform/src/demo-session';
 import { DEMO_DEAL } from '../packages/domain/src/demo-data';
 import PlatformShell from '../packages/ui/src/PlatformShell';
 import { APP_ID, APP_LABEL, DEMO_ACCOUNT } from './config';
+import BorrowerLogin from './BorrowerLogin';
 import Overview from './Overview';
 import ProductMarketplace from './ProductMarketplace';
 import ProductDetail from './ProductDetail';
@@ -62,11 +62,6 @@ const NOTIFICATIONS = [
   { id: 'borrower-docs', title: 'Financial statements required', detail: 'FY2025 audited statements are still required for review.', to: '/documents' },
   { id: 'borrower-request', title: 'PiHub information request open', detail: 'Review outstanding borrower actions and due dates.', to: '/requests' },
 ];
-
-const CentralAccessRedirect = () => {
-  useEffect(() => { redirectToCentralAccess(APP_ID); }, []);
-  return null;
-};
 
 const Workspace = ({ session, onLogout }) => {
   const location = useLocation();
@@ -140,7 +135,33 @@ const Workspace = ({ session, onLogout }) => {
 };
 
 export default function App() {
-  const [session] = useState(() => consumeDemoAccessHandoff({ applicationId: APP_ID, account: DEMO_ACCOUNT }) || readDemoSession(APP_ID));
-  if (!session) return <CentralAccessRedirect />;
-  return <Workspace session={session} onLogout={() => { clearDemoSession(APP_ID); redirectToCentralAccess(APP_ID); }} />;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [session, setSession] = useState(() => consumeDemoAccessHandoff({ applicationId: APP_ID, account: DEMO_ACCOUNT }) || readDemoSession(APP_ID));
+
+  useEffect(() => {
+    if (!session && location.pathname !== '/login') navigate('/login', { replace: true });
+  }, [location.pathname, navigate, session]);
+
+  if (!session) {
+    return (
+      <BorrowerLogin
+        onAuthenticated={nextSession => {
+          setSession(nextSession);
+          navigate('/', { replace: true });
+        }}
+      />
+    );
+  }
+
+  return (
+    <Workspace
+      session={session}
+      onLogout={() => {
+        clearDemoSession(APP_ID);
+        setSession(null);
+        navigate('/login', { replace: true });
+      }}
+    />
+  );
 }
