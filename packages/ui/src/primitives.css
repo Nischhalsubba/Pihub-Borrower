@@ -1,0 +1,49 @@
+/* Shared Investor primitive composition.
+   Applications may choose content, but shared card geometry and actions remain
+   owned by @pihub/ui so Borrower, Advisory and Admin cannot drift. */
+
+.ph-card-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pihub-space-3);
+  margin: 0 0 var(--pihub-space-3);
+}
+
+.ph-card-head-copy {
+  min-width: 0;
+}
+
+.ph-card-head h2 {
+  margin: 0 !important;
+}
+
+.ph-card-head-action {
+  min-width: 0;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--pihub-space-2);
+}
+
+.ph-card-head-action .ph-button {
+  min-height: var(--pihub-control);
+}
+
+@media (max-width: 620px) {
+  .ph-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ph-card-head-action {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .ph-card-head-action .ph-button {
+    width: 100%;
+  }
+}

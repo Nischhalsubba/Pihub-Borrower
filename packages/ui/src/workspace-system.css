@@ -1,0 +1,22 @@
+/*
+ * Compatibility layer for PiHub independent applications.
+ *
+ * The Investor product is the only visual source of truth. Keeping a second
+ * 25KB workspace theme here caused exactly the drift this monorepo is meant to
+ * prevent: alternate shell geometry, tiny type, different active states and
+ * duplicate control styling. All active workspace rules now live in
+ * investor-design-system.css. This file intentionally contains aliases only so
+ * existing imports remain stable while application composition is migrated.
+ */
+
+:root {
+  --ph-ink: var(--pi-text, #0f172a);
+  --ph-muted: var(--pi-text-secondary, #475569);
+  --ph-line: var(--pi-border, #e2e8f0);
+  --ph-panel: var(--pi-surface, #fff);
+  --ph-bg: var(--pi-workspace-bg, #f6f8fc);
+  --ph-signal: var(--pi-primary, #2457e6);
+  --ph-green: var(--pi-success, #15803d);
+  --ph-amber: var(--pi-warning, #b45309);
+  --ph-red: var(--pi-danger, #b42318);
+}

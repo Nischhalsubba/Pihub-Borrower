@@ -1,0 +1,173 @@
+.ph-workflow {
+  margin-top: var(--pihub-space-4, 16px);
+  padding: var(--pihub-space-4, 16px);
+  border: 1px solid var(--pi-border, #e2e8f0);
+  border-radius: var(--pi-radius-md, 12px);
+  background: var(--pi-surface, #fff);
+  box-shadow: var(--pi-shadow-low, 0 1px 2px rgba(15, 23, 42, .04));
+}
+
+.ph-workflow-head,
+.ph-workflow-action,
+.ph-workflow-meta {
+  display: flex;
+  align-items: center;
+}
+
+.ph-workflow-head {
+  justify-content: space-between;
+  gap: var(--pihub-space-4, 16px);
+  margin-bottom: var(--pihub-space-3, 12px);
+}
+
+.ph-workflow-head > div {
+  min-width: 0;
+}
+
+.ph-workflow-head h2 {
+  margin: 0;
+  color: var(--pi-text, #0f172a);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ph-workflow-head p {
+  margin: 3px 0 0;
+  color: var(--pi-text-secondary, #475569);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.ph-workflow-meta {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--pihub-space-3, 12px);
+}
+
+.ph-workflow-meta span {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid var(--pi-border, #e2e8f0);
+  border-radius: 999px;
+  background: var(--pi-surface-subtle, #f8fafc);
+  color: var(--pi-text-secondary, #475569);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ph-workflow-meta .is-current {
+  border-color: #bfceff;
+  background: #eef3ff;
+  color: #2449ad;
+}
+
+.ph-workflow-track {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(34px, 1fr));
+  gap: 4px;
+  margin: 0 0 var(--pihub-space-4, 16px);
+  padding: 0;
+  list-style: none;
+}
+
+.ph-workflow-step {
+  min-width: 0;
+}
+
+.ph-workflow-step span {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9eef5;
+}
+
+.ph-workflow-step.is-complete span,
+.ph-workflow-step.is-current span {
+  background: var(--pi-primary, #2457e6);
+}
+
+.ph-workflow-step.is-terminal span {
+  background: var(--pi-success, #15803d);
+}
+
+.ph-workflow-step small {
+  display: block;
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--pi-text-tertiary, #64748b);
+  font-size: 8px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ph-workflow-step.is-current small {
+  color: var(--pi-text, #0f172a);
+  font-weight: 700;
+}
+
+.ph-workflow-action {
+  justify-content: space-between;
+  gap: var(--pihub-space-4, 16px);
+  padding-top: var(--pihub-space-3, 12px);
+  border-top: 1px solid var(--pi-border, #e2e8f0);
+}
+
+.ph-workflow-action-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.ph-workflow-action-copy strong {
+  color: var(--pi-text, #0f172a);
+  font-size: 12px;
+}
+
+.ph-workflow-action-copy span {
+  color: var(--pi-text-secondary, #475569);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.ph-workflow-buttons {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ph-workflow-error {
+  margin-top: 10px;
+  color: var(--pi-danger, #b42318);
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .ph-workflow-track {
+    grid-template-columns: repeat(5, minmax(40px, 1fr));
+    row-gap: 12px;
+  }
+}
+
+@media (max-width: 620px) {
+  .ph-workflow-head,
+  .ph-workflow-action {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ph-workflow-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ph-workflow-buttons,
+  .ph-workflow-buttons .ph-button {
+    width: 100%;
+  }
+}
