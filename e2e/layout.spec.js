@@ -2,17 +2,26 @@ import { test, expect } from '@playwright/test';
 
 const open = page => page.goto('/?pihub_demo_access=borrower&source=investor-access');
 
-test('borrower wide dashboard uses the exact Investor desktop canvas', async ({ page }) => {
+test('borrower wide dashboard uses a fluid enterprise canvas with aligned topbar rails', async ({ page }) => {
   await page.setViewportSize({ width: 2048, height: 1053 });
   await open(page);
   await expect(page.getByRole('heading', { name: 'Financing overview' })).toBeVisible();
+  await expect(page.getByText('PH-2026-0147', { exact: true })).toBeVisible();
 
   const layout = await page.evaluate(() => {
     const main = document.querySelector('.ph-main');
     const stage = document.querySelector('.ph-route-stage');
+    const sidebar = document.querySelector('.ph-sidebar');
+    const topbar = document.querySelector('.ph-topbar');
+    const workspaceBadge = document.querySelector('.ph-workspace-badge');
+    const account = document.querySelector('.ph-user-card');
     const priorityIcon = document.querySelector('.ph-priority-icon');
     const mainRect = main.getBoundingClientRect();
     const stageRect = stage.getBoundingClientRect();
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const topbarRect = topbar.getBoundingClientRect();
+    const workspaceBadgeRect = workspaceBadge.getBoundingClientRect();
+    const accountRect = account.getBoundingClientRect();
     const priorityIconRect = priorityIcon.getBoundingClientRect();
     const mainStyle = getComputedStyle(main);
     return {
@@ -22,18 +31,30 @@ test('borrower wide dashboard uses the exact Investor desktop canvas', async ({ 
       paddingRight: parseFloat(mainStyle.paddingRight),
       leftGutter: stageRect.left - mainRect.left,
       rightGutter: mainRect.right - stageRect.right,
+      workspaceToStageLeft: workspaceBadgeRect.left - stageRect.left,
+      accountToStageRight: accountRect.right - stageRect.right,
+      sidebarWidth: sidebarRect.width,
+      topbarHeight: topbarRect.height,
       priorityIconWidth: priorityIconRect.width,
       priorityIconHeight: priorityIconRect.height,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     };
   });
 
-  expect(layout.stageWidth).toBeGreaterThanOrEqual(1439);
-  expect(layout.stageWidth).toBeLessThanOrEqual(1441);
-  expect(layout.paddingLeft).toBe(40);
-  expect(layout.paddingRight).toBe(40);
-  expect(Math.abs(layout.leftGutter - ((layout.mainWidth - layout.stageWidth) / 2))).toBeLessThanOrEqual(2);
-  expect(Math.abs(layout.leftGutter - layout.rightGutter)).toBeLessThanOrEqual(2);
+  expect(layout.stageWidth).toBeGreaterThan(1700);
+  expect(layout.stageWidth).toBeLessThan(1760);
+  expect(layout.paddingLeft).toBeGreaterThanOrEqual(40);
+  expect(layout.paddingLeft).toBeLessThanOrEqual(42);
+  expect(layout.paddingRight).toBeGreaterThanOrEqual(40);
+  expect(layout.paddingRight).toBeLessThanOrEqual(42);
+  expect(Math.abs(layout.leftGutter - layout.paddingLeft)).toBeLessThanOrEqual(2);
+  expect(Math.abs(layout.rightGutter - layout.paddingRight)).toBeLessThanOrEqual(2);
+  expect(Math.abs(layout.workspaceToStageLeft)).toBeLessThanOrEqual(2);
+  expect(Math.abs(layout.accountToStageRight)).toBeLessThanOrEqual(2);
+  expect(layout.sidebarWidth).toBeGreaterThanOrEqual(231);
+  expect(layout.sidebarWidth).toBeLessThanOrEqual(233);
+  expect(layout.topbarHeight).toBeGreaterThanOrEqual(67);
+  expect(layout.topbarHeight).toBeLessThanOrEqual(69);
   expect(layout.priorityIconWidth).toBeGreaterThanOrEqual(35);
   expect(layout.priorityIconWidth).toBeLessThanOrEqual(37);
   expect(layout.priorityIconHeight).toBeGreaterThanOrEqual(35);

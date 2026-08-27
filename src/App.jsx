@@ -6,6 +6,7 @@ import {
   readDemoSession,
   redirectToCentralAccess,
 } from '../packages/platform/src/demo-session';
+import { DEMO_DEAL } from '../packages/domain/src/demo-data';
 import PlatformShell from '../packages/ui/src/PlatformShell';
 import { APP_ID, APP_LABEL, DEMO_ACCOUNT } from './config';
 import Overview from './Overview';
@@ -98,6 +99,8 @@ const Workspace = ({ session, onLogout }) => {
       brandTitle="PiHub Borrower"
       brandSubtitle="Origination workspace"
       workspaceBadge={APP_LABEL}
+      workspaceTitle={DEMO_DEAL.id}
+      workspaceSubtitle={DEMO_DEAL.name}
       environmentDetail="Local browser data · no live records"
       navigationSections={NAVIGATION}
       primaryAction={{ label: 'New application', to: '/applications/new' }}
@@ -109,8 +112,8 @@ const Workspace = ({ session, onLogout }) => {
       accountLogoutLabel="Logout"
       notifications={NOTIFICATIONS}
       routeKey={location.pathname}
-      contentMaxWidth="1440px"
-      mainGutter="clamp(24px, 2.2vw, 40px)"
+      contentMaxWidth="1920px"
+      mainGutter="clamp(28px, 2vw, 48px)"
       compactMainGutter="18px"
     >
       <Routes>
