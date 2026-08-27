@@ -1,3 +1,4 @@
+# One-time extraction workflow. Remove after standalone migration is verified.
 name: Bootstrap standalone Borrower
 
 on:
@@ -50,11 +51,8 @@ jobs:
           cp .source-investor/tooling/vite-shared-package-resolve.mjs tooling/vite-shared-package-resolve.mjs
           cp .source-investor/tsconfig.base.json ./tsconfig.base.json
 
-          # The old live verifier covered every monorepo application. A standalone
-          # Borrower repository must not own Advisory/Admin/Access production QA.
           rm -f e2e/live-production.mjs
 
-          # Borrower now lives at repository root instead of apps/borrower.
           find src -type f \( -name '*.js' -o -name '*.jsx' \) -print0 | \
             xargs -0 sed -i 's#../../../packages/#../packages/#g'
 
