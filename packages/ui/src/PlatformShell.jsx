@@ -35,6 +35,8 @@ export default function PlatformShell({
   brandTitle,
   brandSubtitle,
   workspaceBadge,
+  workspaceTitle,
+  workspaceSubtitle,
   environmentDetail,
   navigationSections,
   primaryAction,
@@ -142,18 +144,25 @@ export default function PlatformShell({
               <small>{brandSubtitle}</small>
             </span>
           </button>
-          <div className="ph-workspace-context">
-            <div className="ph-environment-chip" role="status" aria-label={`Demo workspace. ${environmentDetail}`}>
-              <span className="ph-environment-dot" aria-hidden="true" />
-              <span className="ph-environment-copy">
-                <strong>Demo workspace</strong>
-                <small>{environmentDetail}</small>
+          <div className="ph-workspace-context" aria-label="Current workspace context">
+            {workspaceBadge ? <span className="ph-workspace-badge">{workspaceBadge}</span> : null}
+            {workspaceTitle || workspaceSubtitle ? (
+              <span className="ph-workspace-context-copy">
+                {workspaceTitle ? <strong>{workspaceTitle}</strong> : null}
+                {workspaceSubtitle ? <small>{workspaceSubtitle}</small> : null}
               </span>
-            </div>
+            ) : null}
           </div>
         </div>
         <div className="ph-topbar-spacer" />
         <div className="ph-topbar-controls" aria-label="Workspace utilities">
+          <div className="ph-environment-chip" role="status" aria-label={`Demo workspace. ${environmentDetail}`}>
+            <span className="ph-environment-dot" aria-hidden="true" />
+            <span className="ph-environment-copy">
+              <strong>Demo workspace</strong>
+              <small>{environmentDetail}</small>
+            </span>
+          </div>
           <button className="ph-command-trigger" type="button" onClick={() => { setNotificationOpen(false); setCommandOpen(true); }} aria-label={`Open search and command menu, ${shortcut}`}>
             <SearchIcon />
             <span>Search or command</span>
