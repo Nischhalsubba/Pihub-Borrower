@@ -135,9 +135,24 @@ const Workspace = ({ session, onLogout }) => {
 };
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [session, setSession] = useState(() => consumeDemoAccessHandoff({ applicationId: APP_ID, account: DEMO_ACCOUNT }) || readDemoSession(APP_ID));
 
-  if (!session) return <BorrowerLogin onAuthenticated={setSession} />;
+  useEffect(() => {
+    if (!session && location.pathname !== '/login') navigate('/login', { replace: true });
+  }, [location.pathname, navigate, session]);
+
+  if (!session) {
+    return (
+      <BorrowerLogin
+        onAuthenticated={nextSession => {
+          setSession(nextSession);
+          navigate('/', { replace: true });
+        }}
+      />
+    );
+  }
 
   return (
     <Workspace
@@ -145,6 +160,7 @@ export default function App() {
       onLogout={() => {
         clearDemoSession(APP_ID);
         setSession(null);
+        navigate('/login', { replace: true });
       }}
     />
   );
