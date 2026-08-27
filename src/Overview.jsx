@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom-v6';
 import { DEMO_DEAL, DEMO_DOCUMENTS, DEMO_REQUESTS, euro } from '../packages/domain/src/demo-data';
-import { getDefaultDemoDestinations } from '../packages/platform/src/demo-workflow-store';
-import WorkflowJourney from '../packages/ui/src/WorkflowJourney';
 import { readLocal } from './local-state';
 import { PageHead, Status } from './ui';
 
@@ -25,7 +23,7 @@ export default function BorrowerOverview() {
 
   return <>
     <PageHead eyebrow="Borrower / Financing overview" title="Financing overview" subtitle="One clear view of what PiHub has, what still blocks review and what happens next." action={<Link className="ph-button primary" to="/financing">Continue application</Link>} />
-    <div className="ph-demo">Demo workspace. Values and actions remain browser-local until shared PiHub authentication, authorization and production APIs are connected.</div>
+    <div className="ph-demo">Demo workspace. Values and actions remain browser-local until production authentication, authorization and APIs are connected.</div>
     <div className="ph-focus-row" aria-label="Borrower workspace context">
       <span className="ph-role-chip is-primary">Borrower owner</span>
       <span className="ph-role-chip">Application {DEMO_DEAL.id}</span>
@@ -57,6 +55,5 @@ export default function BorrowerOverview() {
       <div><small>Current owner</small><strong>{DEMO_DEAL.owner}</strong></div>
       <div><small>Next PiHub review</small><strong>{DEMO_DEAL.nextReview}</strong></div>
     </section>
-    <WorkflowJourney applicationId="borrower" destinations={getDefaultDemoDestinations(import.meta.env)} />
   </>;
 }

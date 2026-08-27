@@ -31,6 +31,41 @@ body,
   max-width: 100%;
 }
 
+/*
+ * Keyboard skip navigation belongs in the accessibility layer, not in normal
+ * document geometry. Keeping it fixed removes it from the application grid so
+ * it cannot create a phantom row above the 68px global header. It becomes
+ * visible only while keyboard focused.
+ */
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 10px 14px;
+  border: 1px solid var(--pi-primary, #2457e6);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--pi-text, #0f172a);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .16);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(-100% - 24px));
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 .ph-app,
 .ph-topbar,
 .ph-shell,

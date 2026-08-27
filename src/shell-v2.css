@@ -93,6 +93,9 @@
 
 /* --------------------------------------------------------------------------
    PAGE RHYTHM + LARGE-CANVAS ALIGNMENT
+   Borrower owns the overview composition. Shared Investor CSS supplies visual
+   tokens and surfaces; these rules supply the missing structural grid/flex
+   geometry so labels, actions and progress never collapse into one text line.
    -------------------------------------------------------------------------- */
 .ph-app[data-workspace="borrower"] .ph-page-head {
   align-items: center !important;
@@ -118,12 +121,43 @@
 }
 
 .ph-app[data-workspace="borrower"] .ph-focus-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 7px !important;
   margin-bottom: 14px !important;
 }
 
 .ph-app[data-workspace="borrower"] .ph-priority-strip {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
   margin-bottom: 18px !important;
   padding: 12px 14px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-priority-copy {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-priority-copy > span {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-priority-copy strong,
+.ph-app[data-workspace="borrower"] .ph-priority-copy small {
+  display: block !important;
+  min-width: 0 !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-priority-strip > .ph-button {
+  flex: 0 0 auto !important;
 }
 
 .ph-app[data-workspace="borrower"] .ph-kpi-tape {
@@ -143,6 +177,127 @@
   height: 100% !important;
 }
 
+.ph-app[data-workspace="borrower"] .ph-panel-head {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-panel-head > div {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-panel-head strong,
+.ph-app[data-workspace="borrower"] .ph-panel-head span {
+  display: block !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-panel-head > a {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-attention-list {
+  min-width: 0 !important;
+  display: grid !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-attention-row {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto 44px !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border-top: 1px solid #edf1f5 !important;
+  text-decoration: none !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-attention-row:first-child {
+  border-top: 0 !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-attention-row > span:first-child {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-attention-row strong,
+.ph-app[data-workspace="borrower"] .ph-attention-row small {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-attention-row strong {
+  overflow-wrap: anywhere !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-attention-row > b {
+  justify-self: end !important;
+  white-space: nowrap !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-rail {
+  min-width: 0 !important;
+  display: grid !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-step {
+  position: relative !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 22px minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 10px !important;
+  padding: 8px 0 !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-step:not(:last-child)::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 30px !important;
+  bottom: -8px !important;
+  left: 10.5px !important;
+  width: 1px !important;
+  background: var(--pi-border) !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-dot {
+  position: relative !important;
+  z-index: 1 !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid var(--pi-border-strong) !important;
+  border-radius: 999px !important;
+  background: var(--pi-surface) !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-copy {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-copy strong,
+.ph-app[data-workspace="borrower"] .ph-stage-copy small {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-copy small {
+  line-height: 1.4 !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-stage-meta {
+  align-self: center !important;
+  justify-self: end !important;
+  white-space: nowrap !important;
+}
+
 .ph-app[data-workspace="borrower"] .ph-deal-band {
   display: grid !important;
   grid-template-columns: minmax(300px, 1.55fr) repeat(3, minmax(170px, .65fr)) !important;
@@ -151,6 +306,23 @@
 
 .ph-app[data-workspace="borrower"] .ph-deal-band > div {
   min-width: 0 !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 4px !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-deal-band > div + div {
+  border-left: 1px solid var(--pi-border) !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-deal-band small,
+.ph-app[data-workspace="borrower"] .ph-deal-band strong {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+.ph-app[data-workspace="borrower"] .ph-deal-band strong {
+  overflow-wrap: anywhere !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -292,6 +464,11 @@
   .ph-app[data-workspace="borrower"] .ph-deal-band {
     grid-template-columns: 1fr !important;
   }
+
+  .ph-app[data-workspace="borrower"] .ph-deal-band > div + div {
+    border-left: 0 !important;
+    border-top: 1px solid var(--pi-border) !important;
+  }
 }
 
 @media (max-width: 620px) {
@@ -302,6 +479,33 @@
 
   .ph-app[data-workspace="borrower"] .ph-language {
     min-width: 0 !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-priority-strip {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-priority-strip > .ph-button {
+    width: 100% !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-attention-row {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-attention-row > b {
+    display: none !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-stage-step {
+    grid-template-columns: 22px minmax(0, 1fr) !important;
+  }
+
+  .ph-app[data-workspace="borrower"] .ph-stage-meta {
+    grid-column: 2 !important;
+    justify-self: start !important;
+    margin-top: 2px !important;
   }
 }
 
