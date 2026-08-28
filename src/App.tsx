@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { BorrowerStoreProvider, useBorrowerStore } from './state/store';
 import { Shell } from './components/Shell';
+import { ProductRouteMotion } from './components/ProductRouteMotion';
 import { LoginPage } from './pages/LoginPage';
 
 const OverviewPage = lazy(() => import('./pages/OverviewPage').then((m) => ({ default: m.OverviewPage })));
@@ -40,7 +41,6 @@ const ESGPage = lazy(() => import('./pages/ESGPage').then((m) => ({ default: m.E
 const PaymentsPage = lazy(() => import('./pages/PaymentsPage').then((m) => ({ default: m.PaymentsPage })));
 const ComplaintsPage = lazy(() => import('./pages/ComplaintsPage').then((m) => ({ default: m.ComplaintsPage })));
 
-
 function RouteFallback() {
   return <div className="route-stage route-loading" role="status" aria-live="polite"><div className="skeleton skeleton-title"/><div className="skeleton skeleton-card"/><span className="sr-only">Loading Borrower workspace</span></div>;
 }
@@ -55,7 +55,7 @@ function ProtectedApp() {
     if (store.connectionStatus === 'error') return <main className="connection-error"><div className="connection-error-card" role="alert"><span className="eyebrow">PIHUB / BORROWER</span><h1>Borrower data is temporarily unavailable</h1><p>{store.connectionError ?? 'The PiHub API could not load your workspace.'}</p><button className="button primary" onClick={() => void store.reloadFromApi()}>Try again</button></div></main>;
     return <RouteFallback/>;
   }
-  return <Shell><Suspense fallback={<RouteFallback/>}><Routes>
+  return <Shell><Suspense fallback={<RouteFallback/>}><ProductRouteMotion routeKey={location.pathname}><Routes>
     <Route path="/" element={<OverviewPage/>}/>
     <Route path="/portfolio" element={<PortfolioPage/>}/>
     <Route path="/qualification" element={<QualificationPage/>}/>
@@ -91,7 +91,7 @@ function ProtectedApp() {
     <Route path="/copilot" element={<CopilotPage/>}/>
     <Route path="/help" element={<HelpPage/>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
-  </Routes></Suspense></Shell>;
+  </Routes></ProductRouteMotion></Suspense></Shell>;
 }
 
 export default function App() {

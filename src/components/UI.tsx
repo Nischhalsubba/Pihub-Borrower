@@ -2,14 +2,14 @@ import React from 'react';
 import { Icon } from './Icons';
 
 export function PageHead({ eyebrow, title, subtitle, action }: { eyebrow?: string; title: string; subtitle: string; action?: React.ReactNode }) {
-  return <header className="page-head">
+  return <header className="page-head" data-motion="page-head">
     <div><div className="eyebrow">{eyebrow}</div><h1 tabIndex={-1}>{title}</h1><p>{subtitle}</p></div>
     {action && <div className="page-head-action">{action}</div>}
   </header>;
 }
 
 export function Card({ title, subtitle, action, children, className = '' }: { title?: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
-  return <section className={`card ${className}`}>
+  return <section className={`card ${className}`} data-motion="surface">
     {(title || subtitle || action) && <div className="card-head"><div>{title && <h2>{title}</h2>}{subtitle && <p>{subtitle}</p>}</div>{action}</div>}
     {children}
   </section>;

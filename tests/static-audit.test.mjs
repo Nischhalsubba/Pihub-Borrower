@@ -84,9 +84,10 @@ test('production authentication uses an HttpOnly-session API boundary instead of
   assert.doesNotMatch(source, /localStorage\.(setItem|getItem)\([^\n]*(token|jwt|session)/i);
 });
 
-test('finance workflows avoid decorative WebGL and continuous animation machinery', () => {
+test('finance workflows use bounded GSAP motion without decorative WebGL or continuous animation loops', () => {
   const pkg = readFileSync(join(root, 'package.json'), 'utf8');
-  assert.doesNotMatch(pkg, /"three"|"@react-three|"gsap"/i);
+  assert.match(pkg, /"gsap": "\^3\.13\.0"/i);
+  assert.doesNotMatch(pkg, /"three"|"@react-three/i);
   assert.doesNotMatch(source, /<canvas|WebGLRenderer|requestAnimationFrame\(/i);
   const css = readFileSync(join(root, 'src/styles.css'), 'utf8');
   assert.match(css, /prefers-reduced-motion/);

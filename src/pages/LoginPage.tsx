@@ -1,19 +1,88 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { gsap } from 'gsap';
 import { Icon } from '../components/Icons';
 import { useAuth } from '../auth/AuthContext';
 import { trackUiEvent } from '../services/telemetry';
 
-const accessApplications = ['Investor', 'Borrower', 'Advisory', 'Admin'] as const;
-
 export function LoginPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const rootRef = useRef<HTMLElement>(null);
   const [email, setEmail] = useState(auth.demoCredentials?.email ?? '');
   const [password, setPassword] = useState(auth.demoCredentials?.password ?? '');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+
+    const media = gsap.matchMedia();
+
+    media.add('(prefers-reduced-motion: no-preference)', () => {
+      const context = gsap.context(() => {
+        const left = root.querySelectorAll<HTMLElement>('[data-auth-motion="left"]');
+        const right = root.querySelectorAll<HTMLElement>('[data-auth-motion="right"]');
+        const atmosphere = root.querySelector<HTMLElement>('.auth-visual-atmosphere');
+        const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+        timeline.fromTo(
+          left,
+          { y: 12, willChange: 'transform' },
+          {
+            y: 0,
+            duration: 0.42,
+            stagger: 0.045,
+            overwrite: 'auto',
+            clearProps: 'transform,willChange',
+          },
+        );
+
+        if (right.length) {
+          timeline.fromTo(
+            right,
+            { y: 16, willChange: 'transform' },
+            {
+              y: 0,
+              duration: 0.48,
+              stagger: 0.05,
+              overwrite: 'auto',
+              clearProps: 'transform,willChange',
+            },
+            0.08,
+          );
+        }
+
+        if (atmosphere) {
+          timeline.fromTo(
+            atmosphere,
+            { x: 8, scale: 1.02, willChange: 'transform' },
+            {
+              x: 0,
+              scale: 1,
+              duration: 0.72,
+              ease: 'power2.out',
+              overwrite: 'auto',
+              clearProps: 'transform,willChange',
+            },
+            0,
+          );
+        }
+      }, root);
+
+      return () => context.revert();
+    });
+
+    media.add('(prefers-reduced-motion: reduce)', () => {
+      const targets = root.querySelectorAll<HTMLElement>('[data-auth-motion], .auth-visual-atmosphere');
+      gsap.set(targets, { clearProps: 'transform,willChange' });
+    });
+
+    return () => media.revert();
+  }, []);
+
   if (auth.status === 'authenticated') return <Navigate to="/" replace/>;
 
   const submit = async (event: React.FormEvent) => {
@@ -42,24 +111,20 @@ export function LoginPage() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Password-reset request failed. Try again.'); }
   };
 
-  return <main className="auth-world auth-world-access" data-pihub-module="borrower">
+  return <main ref={rootRef} className="auth-world auth-world-access" data-pihub-module="borrower">
     <section className="auth-form-panel">
-      <div className="auth-card" data-motion="auth-card">
-        <div className="auth-brand" aria-label="PiHub Borrower access">
+      <div className="auth-card">
+        <div className="auth-brand" aria-label="PiHub Borrower access" data-auth-motion="left">
           <span className="auth-brand-logo" aria-hidden="true">PH</span>
-          <strong>PiHub</strong>
-          <span className="auth-brand-context">BORROWER / ACCESS</span>
+          <strong>PiHub Borrower</strong>
+          <span className="auth-brand-context">SECURE ACCESS</span>
         </div>
 
-        <div className="pihub-access-tabs" aria-label="PiHub workspace family">
-          {accessApplications.map((application) => <span key={application} className={application === 'Borrower' ? 'is-active' : ''} aria-current={application === 'Borrower' ? 'page' : undefined}>{application}</span>)}
-        </div>
+        <div className="auth-eyebrow" data-auth-motion="left">BORROWER ACCESS</div>
+        <h1 className="auth-title" data-auth-motion="left">Login</h1>
+        <p className="auth-description" data-auth-motion="left">Enter your email address and password</p>
 
-        <div className="auth-eyebrow">SECURE BORROWER ACCESS</div>
-        <h1 className="auth-title">Login</h1>
-        <p className="auth-description">Enter your email address and password</p>
-
-        <form onSubmit={submit} className="form-signin" noValidate>
+        <form onSubmit={submit} className="form-signin" noValidate data-auth-motion="left">
           {auth.demoCredentials && <div className="auth-demo-banner" role="status"><strong>Borrower demo sign in</strong><span>Demo credentials are prefilled in this demo build. Production sign-in never exposes demo credentials.</span></div>}
           <div className="auth-field">
             <label htmlFor="borrower-login-email">Email Address</label>
@@ -75,19 +140,19 @@ export function LoginPage() {
           <button className="auth-submit" type="submit" disabled={submitting} aria-label="Open Borrower">{submitting ? 'SIGNING IN…' : 'LOGIN'}</button>
         </form>
 
-        <div className="auth-foot">Borrower access is provisioned through the PiHub identity and authorization service.</div>
+        <div className="auth-foot" data-auth-motion="left">Borrower access is provisioned through the PiHub identity and authorization service.</div>
       </div>
     </section>
 
     <aside className="auth-visual" aria-hidden="true">
       <div className="auth-visual-atmosphere" />
-      <div className="auth-visual-copy" data-motion="auth-visual-copy">
-        <span>FINANCING DECISIONS, STRUCTURED CLEARLY</span>
-        <h2>One workspace for financing, execution and servicing.</h2>
-        <p>Complete borrower requirements, answer PiHub requests, manage documents and follow every financing milestone without unnecessary visual noise.</p>
-        <div className="auth-proof">
-          <div><strong>01</strong><small>APPLICATIONS</small></div>
-          <div><strong>02</strong><small>PIHUB REQUESTS</small></div>
+      <div className="auth-visual-copy">
+        <span data-auth-motion="right">BORROWER FINANCING, STRUCTURED CLEARLY</span>
+        <h2 data-auth-motion="right">One workspace from application through servicing.</h2>
+        <p data-auth-motion="right">Complete financing requirements, answer PiHub requests, manage documents and follow every borrower milestone without unnecessary visual noise.</p>
+        <div className="auth-proof" data-auth-motion="right">
+          <div><strong>01</strong><small>APPLICATION</small></div>
+          <div><strong>02</strong><small>REQUESTS</small></div>
           <div><strong>03</strong><small>SERVICING</small></div>
         </div>
       </div>

@@ -21,17 +21,17 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 });
 
-test('Borrower login uses the unified PiHub access shell while authentication remains Borrower-scoped', async ({ page }) => {
+test('Borrower login is module-scoped while retaining the unified PiHub access shell', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible();
-  await expect(page.getByText('Investor', { exact: true })).toBeVisible();
-  await expect(page.getByText('Borrower', { exact: true })).toBeVisible();
-  await expect(page.getByText('Advisory', { exact: true })).toBeVisible();
-  await expect(page.getByText('Admin', { exact: true })).toBeVisible();
-  await expect(page.locator('.pihub-access-tabs .is-active')).toHaveText('Borrower');
+  await expect(page.getByText('PiHub Borrower', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-pihub-module="borrower"]')).toBeVisible();
+  await expect(page.locator('.pihub-access-tabs')).toHaveCount(0);
+  for (const moduleName of ['Investor', 'Advisory', 'Admin']) await expect(page.getByText(moduleName, { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Open Borrower' }).click();
   const topbar = page.locator('.topbar');
   await expect(topbar).toHaveCSS('top', '0px');
+  await expect(page.locator('.pihub-route-motion')).toBeVisible();
   await expect(page.locator('.sidebar .ap-nav-item[aria-current="page"]')).toHaveCount(1);
   const skip = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skip).toHaveCSS('position', 'fixed');
@@ -127,7 +127,6 @@ test('product-aware qualification, draw centre and disclosure consent have real 
   await expect(page.getByRole('heading', { name: 'Pre-qualification & financing fit' })).toBeVisible();
   await page.getByRole('button', { name: 'Refresh assessment' }).click();
   await expect(page.locator('.qualification-score')).toBeVisible();
-
   await openShellLink(page, 'Draws & inspections');
   await expect(page.getByRole('heading', { name: /Draws|Capital/i }).first()).toBeVisible();
 

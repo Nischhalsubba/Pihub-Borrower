@@ -11,7 +11,10 @@ const authCss = read('packages/ui/src/pihub-auth.css');
 const motion = read('packages/ui/src/pihub-motion.css');
 const shell = read('src/components/Shell.tsx');
 const login = read('src/pages/LoginPage.tsx');
+const productMotion = read('src/components/ProductRouteMotion.tsx');
+const app = read('src/App.tsx');
 const main = read('src/main.tsx');
+const pkg = read('package.json');
 
 test('Borrower consumes the canonical PiHub design-system layers after legacy styles', () => {
   const legacy = main.indexOf("import './styles.css'");
@@ -33,6 +36,19 @@ test('PiHub shell tokens remain anchored to the Investor product contract', () =
   ]) assert.ok(system.includes(rule), `Missing canonical token: ${rule}`);
 });
 
+test('PiHub spacing uses one semantic scale for page, section, grid and card geometry', () => {
+  for (const rule of [
+    '--pihub-space-8: 64px',
+    '--pihub-section-gap: var(--pihub-space-5)',
+    '--pihub-grid-gap: var(--pihub-space-4)',
+    '--pihub-card-padding: var(--pihub-space-5)',
+    '--pihub-layout-inline: clamp(var(--pihub-space-5), 2.5vw, var(--pihub-space-7))'
+  ]) assert.ok(system.includes(rule), `Missing spacing contract: ${rule}`);
+  assert.match(shellCss, /padding:var\(--pihub-space-6\) var\(--pihub-layout-inline\) var\(--pihub-space-8\)/);
+  assert.match(system, /\.route-stage\{[^}]*gap:var\(--pihub-section-gap\)/);
+  assert.match(system, /\.card\{[^}]*padding:var\(--pihub-card-padding\)/);
+});
+
 test('sidebar uses one canonical active-state contract and route semantics', () => {
   assert.match(shell, /ap-nav-item/);
   assert.ok(shell.includes("end={href==='/' || href==='/applications'}"));
@@ -42,15 +58,32 @@ test('sidebar uses one canonical active-state contract and route semantics', () 
   assert.match(shellCss, /var\(--pihub-sidebar-raised\)/);
 });
 
-test('Borrower login uses the unified PiHub split access composition without cross-module browser routes', () => {
-  for (const className of ['auth-world', 'auth-form-panel', 'auth-card', 'pihub-access-tabs', 'auth-visual', 'auth-proof']) assert.ok(login.includes(className));
-  for (const moduleName of ['Investor', 'Borrower', 'Advisory', 'Admin']) assert.ok(login.includes(moduleName));
+test('Borrower login is module-scoped and exposes no Investor, Advisory or Admin selector', () => {
+  for (const className of ['auth-world', 'auth-form-panel', 'auth-card', 'auth-visual', 'auth-proof']) assert.ok(login.includes(className));
+  assert.match(login, /PiHub Borrower/);
+  assert.match(login, /BORROWER ACCESS/);
+  assert.doesNotMatch(login, /Investor|Advisory|Admin|pihub-access-tabs|accessApplications/);
+  assert.doesNotMatch(authCss, /pihub-access-tabs/);
   assert.doesNotMatch(login, /\/login\/(investor|advisory|admin)/);
   assert.ok(authCss.includes('grid-template-columns:minmax(520px,46.5%)'));
 });
 
-test('PiHub motion policy is reduced-motion safe and keeps advanced visuals out of operational finance routes', () => {
+test('GSAP provides bounded route and login motion with reduced-motion cleanup', () => {
+  assert.match(pkg, /"gsap": "\^3\.13\.0"/);
+  assert.match(productMotion, /from 'gsap'/);
+  assert.match(login, /from 'gsap'/);
+  assert.match(productMotion, /gsap\.matchMedia\(\)/);
+  assert.match(productMotion, /gsap\.context\(/);
+  assert.match(login, /gsap\.matchMedia\(\)/);
+  assert.match(login, /gsap\.context\(/);
+  assert.match(app, /<ProductRouteMotion routeKey=\{location\.pathname\}>/);
   assert.match(motion, /prefers-reduced-motion:reduce/);
+  assert.doesNotMatch(productMotion, /opacity|autoAlpha/);
+  assert.doesNotMatch(login, /autoAlpha/);
+  assert.doesNotMatch(authCss, /pihub-auth-card-in|pihub-auth-copy-in|@keyframes/);
+});
+
+test('advanced visuals remain out of operational finance rendering', () => {
   assert.doesNotMatch(authCss, /canvas|WebGLRenderer|requestAnimationFrame/);
   assert.doesNotMatch(shellCss, /canvas|WebGLRenderer|requestAnimationFrame/);
 });

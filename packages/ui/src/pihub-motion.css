@@ -1,4 +1,3 @@
-/* PiHub motion policy: calm, functional and contrast-safe. */
-@keyframes pihub-route-enter{from{transform:translateY(8px)}to{transform:translateY(0)}}
-.route-stage{animation:pihub-route-enter 220ms var(--pihub-ease-standard) both}
-@media(prefers-reduced-motion:reduce){.route-stage,.pihub-sidebar .ap-nav-item,.sidebar.pihub-sidebar,.button,.auth-card,.auth-visual-copy,.auth-submit{animation:none!important;transition-duration:.01ms!important}.pihub-sidebar .ap-nav-item:hover,.auth-submit:hover:not(:disabled){transform:none!important}}
+/* GSAP owns coordinated PiHub entrance motion. CSS owns interaction and reduced-motion fallback. */
+.pihub-route-motion{width:100%;min-width:0}
+@media(prefers-reduced-motion:reduce){.route-stage,.pihub-route-motion,[data-motion],[data-auth-motion],.auth-visual-atmosphere,.pihub-sidebar .ap-nav-item,.sidebar.pihub-sidebar,.button,.auth-submit{animation:none!important;transition-duration:.01ms!important}.pihub-sidebar .ap-nav-item:hover,.auth-submit:hover:not(:disabled),.button:active:not(:disabled){transform:none!important}}
