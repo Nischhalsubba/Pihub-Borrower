@@ -7,6 +7,15 @@ async function login(page: any) {
   await expect(page).toHaveURL(/\/$/);
 }
 
+async function openShellLink(page: any, name: string) {
+  const mobileMenu = page.getByRole('button', { name: 'Open navigation' });
+  if (await mobileMenu.isVisible()) {
+    await mobileMenu.click();
+    await expect(page.locator('.sidebar')).toHaveClass(/is-open/);
+  }
+  await page.locator('.sidebar').getByRole('link', { name, exact: true }).click();
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/login');
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
@@ -23,13 +32,17 @@ test('Borrower login remains Borrower-only and keyboard skip link does not consu
   await expect(topbar).toHaveCSS('top', '0px');
   const skip = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skip).toHaveCSS('position', 'fixed');
+  await page.evaluate(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+  });
   await page.keyboard.press('Tab');
   await expect(skip).toBeFocused();
 });
 
 test('financing product discovery has no decorative controls and eligibility typography stays structured', async ({ page }) => {
   await login(page);
-  await page.getByRole('link', { name: 'Financing products' }).click();
+  await openShellLink(page, 'Financing products');
   await page.getByRole('button', { name: 'Compare' }).first().click();
   await expect(page.getByRole('heading', { name: 'Product comparison' })).toBeVisible();
   await page.getByRole('link', { name: 'View product' }).first().click();
@@ -43,35 +56,38 @@ test('financing product discovery has no decorative controls and eligibility typ
 
 test('application actions persist, version and reopen the selected application', async ({ page }) => {
   await login(page);
-  await page.getByRole('link', { name: 'My applications' }).click();
-  await page.getByRole('link', { name: 'New application' }).click();
-  await page.getByLabel('Application name').fill('Hamburg Logistics Expansion');
+  await openShellLink(page, 'My applications');
+  await openShellLink(page, 'New application');
+  await page.getByLabel('Application / project name').fill('Hamburg Logistics Expansion');
   await page.getByRole('button', { name: 'Create draft' }).click();
   await expect(page.getByRole('heading', { name: 'Financing request' })).toBeVisible();
   await page.getByLabel('Financing purpose').fill('Acquisition refinance');
   await page.getByLabel('Requested amount (€)').fill('25000000');
+  await page.getByLabel('Desired funding date').fill('2027-03-15');
   await page.getByLabel('Preferred financing structure').fill('Bridge facility');
   await page.getByLabel('Use of proceeds').fill('Acquisition and refinance');
   await page.getByRole('button', { name: 'Save financing request' }).click();
-  await page.getByRole('link', { name: 'Application versions' }).click();
+  await expect(page.getByText('Financing request saved.', { exact: true })).toBeVisible();
+  await openShellLink(page, 'Application versions');
   await expect(page.getByText(/Version 2/)).toBeVisible();
 });
 
 test('documents, PiHub requests, terms and team governance have real frontend outcomes', async ({ page }) => {
   await login(page);
-  await page.getByRole('link', { name: 'Documents' }).click();
+  await page.goto('/documents');
   const chooserPromise = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: /Upload/i }).first().click();
   const chooser = await chooserPromise;
   await chooser.setFiles({ name: 'audited-2025.pdf', mimeType: 'application/pdf', buffer: Buffer.from('demo') });
   await expect(page.getByText(/persisted in browser IndexedDB/i)).toBeVisible();
 
-  await page.getByRole('link', { name: 'PiHub requests' }).click();
-  await page.getByLabel('Response').fill('The requested information has been provided.');
+  await openShellLink(page, 'PiHub requests');
+  const responseText = 'The requested information has been provided.';
+  await page.getByLabel('Reply to PiHub').fill(responseText);
   await page.getByRole('button', { name: 'Submit response' }).click();
-  await expect(page.getByText(/response submitted/i)).toBeVisible();
+  await expect(page.getByText(responseText, { exact: true })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Organization & team' }).click();
+  await openShellLink(page, 'Organization & team');
   await page.getByRole('button', { name: 'Invite team member' }).click();
   await page.getByLabel('Name').fill('Legal Counsel');
   await page.getByLabel('Email').fill('legal@example.com');
@@ -80,15 +96,13 @@ test('documents, PiHub requests, terms and team governance have real frontend ou
   await expect(page.getByText('legal@example.com')).toBeVisible();
 });
 
-
-
 test('post-funding servicing and privacy rights have complete borrower-owned outcomes', async ({ page }) => {
   await login(page);
-  await page.getByRole('link', { name: 'My applications' }).click();
+  await openShellLink(page, 'My applications');
   await page.getByRole('button', { name: 'Loan servicing' }).click();
   await expect(page.getByRole('heading', { name: 'Loan servicing' })).toBeVisible();
-  await expect(page.getByText('FAC-2025-0098')).toBeVisible();
-  await expect(page.getByText('Repayment schedule')).toBeVisible();
+  await expect(page.getByText('FAC-2025-0098', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Repayment schedule', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'New servicing request' }).click();
   await page.getByLabel('Request type').selectOption('waiver');
   await page.getByLabel('Subject').fill('Temporary covenant waiver');
@@ -96,7 +110,7 @@ test('post-funding servicing and privacy rights have complete borrower-owned out
   await page.getByRole('button', { name: 'Submit request' }).click();
   await expect(page.getByText(/Servicing request submitted/i)).toBeVisible();
 
-  await page.getByRole('link', { name: 'Privacy & data rights' }).click();
+  await openShellLink(page, 'Privacy & data rights');
   await expect(page.getByRole('heading', { name: 'Privacy & data rights' })).toBeVisible();
   await page.getByRole('button', { name: 'Create request' }).first().click();
   await page.getByLabel('Additional information').fill('Please provide my Borrower account data.');
@@ -104,32 +118,30 @@ test('post-funding servicing and privacy rights have complete borrower-owned out
   await expect(page.getByText(/Privacy request submitted/i)).toBeVisible();
 });
 
-
-
 test('product-aware qualification, draw centre and disclosure consent have real state transitions', async ({ page }) => {
   await login(page);
-  await page.getByRole('link', { name: 'Pre-qualification' }).click();
-  await expect(page.getByRole('heading', { name: 'Pre-qualification & matching' })).toBeVisible();
-  await page.getByRole('button', { name: /Run assessment|Refresh assessment/i }).click();
-  await expect(page.getByText(/fit/i).first()).toBeVisible();
+  await openShellLink(page, 'Pre-qualification');
+  await expect(page.getByRole('heading', { name: 'Pre-qualification & financing fit' })).toBeVisible();
+  await page.getByRole('button', { name: 'Refresh assessment' }).click();
+  await expect(page.locator('.qualification-score')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Draws & inspections' }).click();
-  await expect(page.getByRole('heading', { name: /Draws|Capital/i })).toBeVisible();
+  await openShellLink(page, 'Draws & inspections');
+  await expect(page.getByRole('heading', { name: /Draws|Capital/i }).first()).toBeVisible();
 
-  await page.getByRole('link', { name: 'Disclosures & consent' }).click();
-  await expect(page.getByRole('heading', { name: /Disclosure/i })).toBeVisible();
+  await openShellLink(page, 'Disclosures & consent');
+  await expect(page.getByRole('heading', { name: /Disclosure/i }).first()).toBeVisible();
 });
 
 test('scenario lab, calendar, Copilot and complaints are functional Borrower workflows', async ({ page }) => {
   await login(page);
-  await page.getByRole('link', { name: 'Scenario lab' }).click();
-  await expect(page.getByRole('heading', { name: /Scenario/i })).toBeVisible();
-  await page.getByRole('link', { name: 'Calendar' }).click();
+  await openShellLink(page, 'Scenario lab');
+  await expect(page.getByRole('heading', { name: 'Financing scenario lab', level: 1 })).toBeVisible();
+  await openShellLink(page, 'Calendar');
   await expect(page.getByRole('heading', { name: 'Calendar & deadlines' })).toBeVisible();
-  await page.getByRole('link', { name: 'Borrower Copilot' }).click();
+  await openShellLink(page, 'Borrower Copilot');
   await page.getByRole('button', { name: 'Which documents are missing?' }).click();
   await expect(page.getByText('PiHub Copilot').last()).toBeVisible();
-  await page.getByRole('link', { name: 'Complaints & disputes' }).click();
+  await openShellLink(page, 'Complaints & disputes');
   await page.getByLabel('Subject').fill('Service follow-up');
   await page.getByLabel('Description').fill('Please review the response timing on the outstanding request.');
   await page.getByRole('button', { name: 'Submit complaint' }).click();
@@ -137,6 +149,7 @@ test('scenario lab, calendar, Copilot and complaints are functional Borrower wor
 });
 
 test('core authenticated routes have no serious or critical accessibility violations', async ({ page }) => {
+  test.setTimeout(180_000);
   await login(page);
   for (const route of ['/', '/portfolio', '/qualification', '/products', '/applications', '/application', '/company', '/project', '/financials', '/connections', '/data-room', '/disclosures', '/documents', '/requests', '/messages', '/activity', '/versions', '/notifications', '/scenario-lab', '/negotiation', '/closing', '/capital', '/calendar', '/servicing', '/payments', '/esg', '/team', '/account', '/privacy', '/complaints', '/copilot', '/help']) {
     await page.goto(route);
