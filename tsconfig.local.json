@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noImplicitAny": false
+  },
+  "include": ["src", ".local/react-shim.d.ts"],
+  "exclude": ["node_modules", "dist", ".core-build"]
+}

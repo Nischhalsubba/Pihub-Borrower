@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "outDir": ".core-build",
+    "rootDir": "src",
+    "declaration": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/state/model.ts",
+    "src/state/advancedModel.ts",
+    "src/state/advanced.ts",
+    "src/state/core.ts",
+    "src/data/demo.ts"
+  ]
+}
