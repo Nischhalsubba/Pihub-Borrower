@@ -1,0 +1,71 @@
+name: Hydrate Borrower v0.6
+
+on:
+  push:
+    branches:
+      - fix/borrower-investor-parity-i18n
+    paths:
+      - '.v06-transfer/**'
+      - '.github/workflows/hydrate-v06.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hydrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout transfer branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reassemble and verify v0.6 artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .v06-transfer/part-* > /tmp/pihub-borrower-v06.b64
+          base64 --decode /tmp/pihub-borrower-v06.b64 > /tmp/pihub-borrower-v06.zip
+          echo '080a8036d139f73054dc718207df5d8641af32f984d802b8eaa1f447c154f6f0  /tmp/pihub-borrower-v06.zip' | sha256sum -c -
+          rm -rf /tmp/pihub-borrower-v06
+          mkdir -p /tmp/pihub-borrower-v06
+          unzip -q /tmp/pihub-borrower-v06.zip -d /tmp/pihub-borrower-v06
+          test -f /tmp/pihub-borrower-v06/pihub-borrower-v6-ui-parity/package.json
+
+      - name: Overlay v0.6 source and preserve repository infrastructure
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp -a /tmp/pihub-borrower-v06/pihub-borrower-v6-ui-parity/. ./
+          rm -rf .v06-transfer
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'package-lock.json';
+          if (fs.existsSync(path)) {
+            const lock = JSON.parse(fs.readFileSync(path, 'utf8'));
+            lock.version = '0.6.0';
+            if (lock.packages && lock.packages['']) lock.packages[''].version = '0.6.0';
+            fs.writeFileSync(path, JSON.stringify(lock, null, 2) + '\n');
+          }
+          NODE
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run domain, UI, security and architecture validation
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Commit hydrated v0.6 tree and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/hydrate-v06.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: restore Investor parity and full Borrower localization'
+          git push origin HEAD:fix/borrower-investor-parity-i18n
