@@ -20,7 +20,8 @@ export function Status({ tone = 'neutral', children }: { tone?: 'neutral' | 'suc
 }
 
 export function Progress({ value, label }: { value: number; label?: string }) {
-  return <div className="progress-wrap" aria-label={label ?? `Completion ${value}%`}><div className="progress"><span style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></div>{label && <small>{label}</small>}</div>;
+  const clampedValue = Math.max(0, Math.min(100, value));
+  return <div className="progress-wrap" role="progressbar" aria-label={label ?? `Completion ${clampedValue}%`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={clampedValue}><div className="progress"><span style={{ width: `${clampedValue}%` }} /></div>{label && <small>{label}</small>}</div>;
 }
 
 export function EmptyState({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) {

@@ -1,0 +1,9 @@
+/* WCAG contrast hardening for dense financial table headers. */
+.data-head,
+.portfolio-head,
+.ledger-head,
+.cashflow-row:first-child,
+.room-head,
+.offer-impact-row.head {
+  color: #5b6879;
+}

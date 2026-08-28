@@ -91,7 +91,7 @@ test('documents, PiHub requests, terms and team governance have real frontend ou
   await page.getByRole('button', { name: 'Invite team member' }).click();
   await page.getByLabel('Name').fill('Legal Counsel');
   await page.getByLabel('Email').fill('legal@example.com');
-  await page.getByLabel('Role').selectOption('legal');
+  await page.locator('.modal select').selectOption('legal');
   await page.getByRole('button', { name: 'Send invitation' }).click();
   await expect(page.getByText('legal@example.com')).toBeVisible();
 });
