@@ -5,7 +5,7 @@ on:
     branches:
       - fix/borrower-investor-parity-i18n
     paths:
-      - '.v06-transfer/READY'
+      - '.v06-diff-transfer/READY'
 
 permissions:
   contents: write
@@ -19,24 +19,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reassemble and verify v0.6 artifact
+      - name: Reassemble and verify v0.6 patch
         shell: bash
         run: |
           set -euo pipefail
-          cat .v06-transfer/part-* | tr -d '\r\n ' > /tmp/pihub-borrower-v06.b64
-          base64 --decode /tmp/pihub-borrower-v06.b64 > /tmp/pihub-borrower-v06.zip
-          echo '080a8036d139f73054dc718207df5d8641af32f984d802b8eaa1f447c154f6f0  /tmp/pihub-borrower-v06.zip' | sha256sum -c -
-          rm -rf /tmp/pihub-borrower-v06
-          mkdir -p /tmp/pihub-borrower-v06
-          unzip -q /tmp/pihub-borrower-v06.zip -d /tmp/pihub-borrower-v06
-          test -f /tmp/pihub-borrower-v06/pihub-borrower-v6-ui-parity/package.json
+          cat .v06-diff-transfer/part-* | tr -d '\r\n ' > /tmp/pihub-borrower-v06-diff.b64
+          base64 --decode /tmp/pihub-borrower-v06-diff.b64 > /tmp/pihub-borrower-v06-diff.tgz
+          echo 'b022c21794a2c282f461b13c7d21aec7ce431f576d4dc4e645de11d24df7b7d4  /tmp/pihub-borrower-v06-diff.tgz' | sha256sum -c -
 
-      - name: Overlay v0.6 source and preserve repository infrastructure
+      - name: Apply v0.6 changes and preserve repository infrastructure
         shell: bash
         run: |
           set -euo pipefail
-          cp -a /tmp/pihub-borrower-v06/pihub-borrower-v6-ui-parity/. ./
-          rm -rf .v06-transfer
+          tar -xzf /tmp/pihub-borrower-v06-diff.tgz -C .
+          rm -rf .v06-transfer .v06-diff-transfer
           node <<'NODE'
           const fs = require('fs');
           const path = 'package-lock.json';
