@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noImplicitAny": false },
+  "include": ["e2e", "playwright.config.ts", ".local/e2e-shim.d.ts"],
+  "exclude": ["node_modules", "dist", ".core-build"]
+}

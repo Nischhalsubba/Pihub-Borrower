@@ -1,0 +1,96 @@
+openapi: 3.1.0
+info:
+  title: PiHub Borrower API
+  version: 0.2.0
+servers:
+  - url: https://api.pihub-pi.com
+paths:
+  /api/v1/session:
+    get:
+      summary: Resolve the HttpOnly PiHub session and authorized modules
+      responses:
+        '200': { description: Session result }
+  /api/v1/auth/login:
+    post:
+      summary: Establish a Borrower-authorized server session
+      responses:
+        '200': { description: Authenticated }
+        '401': { description: Invalid credentials }
+        '403': { description: Account is not authorized for Borrower }
+  /api/v1/auth/logout:
+    post:
+      summary: Revoke the current server session
+      responses:
+        '204': { description: Signed out }
+  /api/v1/auth/password-reset:
+    post:
+      summary: Start identity-service password reset without disclosing account existence
+      responses:
+        '204': { description: Accepted }
+  /api/v1/borrower/bootstrap:
+    get:
+      summary: Return the authorized Borrower projection of canonical platform state
+      responses:
+        '200': { description: Borrower snapshot }
+        '401': { description: Not authenticated }
+        '403': { description: Not authorized }
+  /api/v1/borrower/commands:
+    post:
+      summary: Execute a server-authorized, idempotent Borrower command
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Command accepted }
+        '409': { description: Version conflict }
+        '422': { description: Domain validation failure }
+  /api/v1/borrower/outbox:
+    post:
+      summary: Accept validated frontend integration events during migration from demo adapters
+      description: Production services should normally emit authoritative events in the command transaction; this endpoint exists as a controlled transition adapter.
+      responses:
+        '200': { description: Event acknowledgement IDs }
+
+  /api/v1/borrower/data-connections/authorization-intent:
+    post:
+      summary: Start a server-managed DATEV, PSD2/finAPI, or ERP authorization flow
+      description: Provider client secrets, access tokens and refresh tokens remain server-side. The browser receives only an expiring authorization URL.
+      responses:
+        '200': { description: Expiring provider authorization intent }
+        '403': { description: Borrower is not authorized to connect this organization }
+  /api/v1/borrower/document-intelligence/jobs:
+    post:
+      summary: Queue authorized documents for classification, extraction and validation
+      description: A self-hosted Docling-compatible worker may parse content; authoritative validation and any fraud/tamper decision remains server-side.
+      responses:
+        '202': { description: Intelligence job queued }
+  /api/v1/borrower/signatures/envelopes:
+    post:
+      summary: Create an API-isolated e-signature envelope
+      description: Supports a provider adapter such as Documenso or OpenSign without exposing provider credentials or making the frontend authoritative for signing status.
+      responses:
+        '202': { description: Envelope accepted by signing adapter }
+  /api/v1/borrower/exports:
+    post:
+      summary: Create a governed application, facility or privacy export package
+      responses:
+        '202': { description: Export job queued }
+
+  /api/v1/borrower/copilot/query:
+    post:
+      summary: Ask Borrower Copilot using server-assembled, Borrower-authorized context
+      description: The API performs authorization, redaction and retrieval before invoking a server-side LLM adapter such as self-hosted Ollama. Provider endpoints, models and credentials never enter browser state.
+      responses:
+        '200': { description: Grounded informational answer }
+        '403': { description: Borrower is not authorized for the referenced application }
+        '422': { description: Request could not be grounded safely }
+
+  /api/v1/borrower/documents/upload-intent:
+    post:
+      summary: Create a narrow, expiring upload intent for one authorized document version
+      responses:
+        '200': { description: Signed upload intent }
+        '413': { description: File too large }
+        '415': { description: Unsupported media type }
