@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "name": "PiHub Product V1",
+    "description": "Unified PiHub design DNA for Investor, Borrower, Advisory and Admin role applications.",
+    "source_references": [
+      "PiHub Investor canonical runtime design system",
+      "PiHub Investor authentication and sidebar references",
+      "UI/UX Pro Max enterprise fintech guidance",
+      "PiHub Borrower workflow requirements"
+    ],
+    "created_at": "2026-08-28"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "cool neutral with cobalt accent",
+      "primary": {"hex": "#2457E6", "role": "primary actions, selected controls and links"},
+      "secondary": {"hex": "#0B1220", "role": "global navigation and authentication visual surface"},
+      "accent": {"hex": "#5B8CFF", "role": "active navigation marker and restrained focus detail"},
+      "neutral": {"scale": ["#FFFFFF", "#F8FAFC", "#F5F7FB", "#DCE4EF", "#CBD5E1", "#94A3B8", "#64748B", "#536078", "#101A2E", "#0B1220"], "usage": "workspace, surfaces, borders, text hierarchy and navigation"},
+      "semantic": {"success": "#15803D", "warning": "#B45309", "error": "#B42318", "info": "#175CD3"},
+      "surface": {"background": "#F5F7FB", "card": "#FFFFFF", "elevated": "#FFFFFF"},
+      "contrast_strategy": "AA-or-better dark-on-light workflow surfaces with high-contrast midnight product chrome"
+    },
+    "typography": {
+      "type_scale": {
+        "display": {"size": "36-44px", "weight": "600", "line_height": "1.06-1.12", "tracking": "-0.03em"},
+        "heading_1": {"size": "30-40px", "weight": "600", "line_height": "1.12", "tracking": "-0.02em"},
+        "heading_2": {"size": "24px", "weight": "600", "line_height": "1.25", "tracking": "-0.01em"},
+        "heading_3": {"size": "18px", "weight": "600", "line_height": "1.35", "tracking": "0"},
+        "body": {"size": "14px", "weight": "400", "line_height": "1.5", "tracking": "0"},
+        "body_small": {"size": "12px", "weight": "400", "line_height": "1.5", "tracking": "0"},
+        "caption": {"size": "10-11px", "weight": "500", "line_height": "1.4", "tracking": "0.01em"},
+        "overline": {"size": "9-10px", "weight": "700", "line_height": "1.3", "tracking": "0.09em"}
+      },
+      "font_families": {"heading": "IBM Plex Sans", "body": "IBM Plex Sans", "mono": "IBM Plex Mono"},
+      "font_style_notes": "Institutional sans-serif hierarchy; mono reserved for identifiers and numeric/system contexts."
+    },
+    "spacing": {"base_unit": "4px", "scale": ["4px", "8px", "12px", "16px", "24px", "32px", "48px"], "content_density": "compact-comfortable", "section_rhythm": "24-32px between related operational groups"},
+    "layout": {"grid_system": "role application content inside a fixed desktop PiHub shell", "max_content_width": "1480px", "columns": "12 desktop / 8 tablet / 4 mobile", "gutter": "24-44px desktop, 14-20px mobile", "breakpoints": ["375px", "768px", "1024px", "1440px"], "alignment_tendency": "strict grid"},
+    "shape": {"border_radius": {"small": "8px", "medium": "10px", "large": "16px", "pill": "999px"}, "border_usage": "subtle 1px cool-neutral borders", "divider_style": "hairline cool-neutral separators"},
+    "elevation": {"shadow_style": "sparse soft diffusion", "levels": {"low": "0 1px 2px rgba(13,24,48,.025)", "medium": "0 12px 30px rgba(13,24,48,.04)", "high": "0 18px 50px rgba(13,24,48,.16)"}, "depth_cues": "border and surface tone before shadow"},
+    "iconography": {"style": "outline", "stroke_weight": "1.75-2px optical", "size_scale": ["16px", "18px", "20px", "24px"], "preferred_set": "existing PiHub icon set until a controlled product-wide migration"},
+    "motion": {"easing": "cubic-bezier(.2,0,0,1) with cubic-bezier(.16,1,.3,1) for transform entrances", "duration_scale": {"micro": "120ms", "normal": "180ms", "macro": "280-360ms"}, "entrance_pattern": "8-14px translate plus opacity on authentication and route hierarchy only", "exit_pattern": "shorter opacity/translate", "philosophy": "quiet functional movement, no bounce"},
+    "components": {"button_style": "44px minimum, 10px radius, cobalt primary and neutral secondary", "input_style": "44-48px, visible label, white surface and cobalt focus ring", "card_style": "16px border-first white surfaces with low shadow", "navigation_pattern": "232px midnight rail, 72px product topbar, 44px items, 3px cobalt active marker", "modal_style": "elevated white sheet with clear scrim and close action", "list_style": "dense operational rows with restrained hover and readable numeric alignment", "component_notes": "role applications own workflow composition, not shared chrome"
+    }
+  },
+  "design_style": {
+    "aesthetic": {"mood": ["precise", "controlled", "modern", "calm", "high-trust"], "visual_metaphor": "institutional financial operating desk", "era_influence": "contemporary enterprise fintech", "genre": "multi-role finance workspace", "personality_traits": ["meticulous", "quiet", "confident", "fast"], "adjectives": ["clean", "data-first", "restrained", "professional"]},
+    "visual_language": {"complexity": "moderate", "ornamentation": "minimal", "whitespace_usage": "controlled and functional", "visual_weight_distribution": "shell and headings establish hierarchy; workflow data carries weight", "focal_strategy": "one primary action per view", "contrast_level": "high", "texture_usage": "technical grid on authentication only"},
+    "composition": {"hierarchy_method": "type, spacing and surface grouping", "balance_type": "asymmetric but grid disciplined", "flow_direction": "top-left through task hierarchy", "grouping_strategy": "workflow-owned surface groups", "negative_space_role": "separates decisions without lowering data density"},
+    "imagery": {"photo_treatment": "none in core product", "illustration_style": "abstract product atmosphere on authentication only", "graphic_elements": "technical grid, hairlines and restrained signals", "pattern_usage": "authentication only", "image_shape": "functional rectangles"},
+    "interaction_feel": {"feedback_style": "immediate and quiet", "hover_behavior": "background/border shift with up to 3px nav translation", "transition_personality": "snappy controlled glide", "loading_style": "skeleton or compact progress", "microinteraction_density": "low-medium"},
+    "brand_voice_in_ui": {"tone": "clear and factual", "formality": "professional", "cta_style": "direct imperative", "empty_state_approach": "explain state and next useful action", "error_tone": "specific, calm and recovery-oriented"}
+  },
+  "visual_effects": {
+    "overview": {"effect_intensity": "subtle-accent", "performance_tier": "low in operational UI, optional medium on authentication", "fallback_strategy": "static gradient/grid with reduced motion", "primary_technology": "CSS/React operationally; optional isolated brand-scene technology"},
+    "background_effects": {"type": "technical-grid", "description": "light and midnight grid fields on PiHub access", "technology": "CSS", "params": {"color_palette": ["#F8FAFC", "#0B1220", "#2457E6"], "speed": "none", "density": "low", "opacity": "0.04-0.08", "blend_mode": "normal"}},
+    "particle_systems": {"enabled": false, "type": "none", "description": "Borrower uses the static canonical fallback to keep operational dependency surface small", "technology": "none", "params": {"count": "0", "shape": "none", "size_range": "none", "movement_pattern": "none", "color_behavior": "none", "interaction": "none", "spawn_area": "none"}},
+    "3d_elements": {"enabled": false, "type": "none", "description": "No 3D in Borrower operational runtime", "technology": "none", "params": {"renderer": "none", "lighting": "none", "camera": "none", "materials": "none", "geometry": "none", "post_processing": [], "interaction_model": "none"}},
+    "shader_effects": {"enabled": false, "type": "none", "description": "Not required for the static product-consistent auth fallback", "technology": "none", "params": {"uniforms": [], "vertex_manipulation": "none", "fragment_output": "none", "noise_type": "none", "distortion": "none"}},
+    "scroll_effects": {"parallax": {"enabled": false, "layers": "0", "depth_range": "0", "speed_curve": "none"}, "scroll_triggered_animations": {"enabled": false, "trigger_points": [], "animation_type": "none", "scrub_behavior": "none"}, "scroll_morphing": {"enabled": false, "description": "not appropriate for financial workflows"}},
+    "text_effects": {"type": "none", "description": "text remains immediately readable", "technology": "none", "params": {"split_strategy": "none", "animation_per_unit": "none", "stagger": "none", "effect_style": "none"}},
+    "cursor_effects": {"enabled": false, "type": "none", "description": "standard pointer behavior", "params": {"shape": "system", "size": "system", "blend_mode": "normal", "trail": "none", "interaction_zone": "none"}},
+    "image_effects": {"type": "none", "description": "no decorative core-app image effects", "technology": "none", "params": {"filter_pipeline": "none", "hover_transform": "none", "reveal_animation": "none", "distortion_type": "none"}},
+    "glassmorphism_neumorphism": {"enabled": false, "style": "none", "params": {"blur_radius": "0", "transparency": "0", "border_treatment": "solid border", "shadow_type": "soft diffused", "light_source_angle": "none"}},
+    "canvas_drawings": {"enabled": false, "type": "none", "description": "not used", "technology": "none", "params": {"draw_method": "none", "animation_loop": "none", "color_scheme": "none", "responsiveness": "none", "interaction": "none"}},
+    "svg_animations": {"enabled": false, "type": "none", "description": "not required", "params": {"animation_method": "none", "path_morphing": "none", "stroke_animation": "none", "filter_effects": "none"}},
+    "composite_notes": "PiHub role applications share one visual and motion contract. Advanced brand effects, when used by another role, stay isolated to authentication and must retain the same static fallback."
+  }
+}

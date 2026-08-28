@@ -4,6 +4,8 @@ import { Icon } from '../components/Icons';
 import { useAuth } from '../auth/AuthContext';
 import { trackUiEvent } from '../services/telemetry';
 
+const accessApplications = ['Investor', 'Borrower', 'Advisory', 'Admin'] as const;
+
 export function LoginPage() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -40,23 +42,54 @@ export function LoginPage() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Password-reset request failed. Try again.'); }
   };
 
-  return <main className="login-screen">
-    <section className="login-panel">
-      <div className="login-brand"><span className="brand-mark">PH</span><div><strong>PiHub</strong><small>Borrower</small></div></div>
-      <div className="login-copy"><span>FINANCING WORKSPACE</span><h1>Sign in</h1><p>Guided financing origination and loan-servicing workspace for borrowers and sponsors.</p></div>
-      <form onSubmit={submit} className="login-form">
-        <label>Email address<input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-        <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-        {error && <div className="form-alert" role="alert"><Icon name="warning" size={18}/>{error}</div>}
-        <button className="button primary" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Open Borrower'}</button>
-        <button className="text-button" type="button" onClick={resetPassword}>Forgot password?</button>
-        {notice&&<div className="form-note" role="status">{notice}</div>}
-      </form>
-      {auth.demoCredentials && <div className="demo-credentials"><strong>Borrower demo account</strong><span>{auth.demoCredentials.email}</span><span>{auth.demoCredentials.password}</span></div>}
+  return <main className="auth-world auth-world-access" data-pihub-module="borrower">
+    <section className="auth-form-panel">
+      <div className="auth-card" data-motion="auth-card">
+        <div className="auth-brand" aria-label="PiHub Borrower access">
+          <span className="auth-brand-logo" aria-hidden="true">PH</span>
+          <strong>PiHub</strong>
+          <span className="auth-brand-context">BORROWER / ACCESS</span>
+        </div>
+
+        <div className="pihub-access-tabs" aria-label="PiHub workspace family">
+          {accessApplications.map((application) => <span key={application} className={application === 'Borrower' ? 'is-active' : ''} aria-current={application === 'Borrower' ? 'page' : undefined}>{application}</span>)}
+        </div>
+
+        <div className="auth-eyebrow">SECURE BORROWER ACCESS</div>
+        <h1 className="auth-title">Login</h1>
+        <p className="auth-description">Enter your email address and password</p>
+
+        <form onSubmit={submit} className="form-signin" noValidate>
+          {auth.demoCredentials && <div className="auth-demo-banner" role="status"><strong>Borrower demo sign in</strong><span>Demo credentials are prefilled in this demo build. Production sign-in never exposes demo credentials.</span></div>}
+          <div className="auth-field">
+            <label htmlFor="borrower-login-email">Email Address</label>
+            <input id="borrower-login-email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required aria-invalid={Boolean(error) || undefined} />
+          </div>
+          <div className="auth-field">
+            <label htmlFor="borrower-login-password">Password</label>
+            <input id="borrower-login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required aria-invalid={Boolean(error) || undefined} />
+          </div>
+          <div className="auth-meta"><button className="auth-link-button" type="button" onClick={resetPassword}>Forgot Password?</button></div>
+          {error && <div className="auth-error" role="alert"><Icon name="warning" size={17}/><span>{error}</span></div>}
+          {notice && <div className="auth-notice" role="status">{notice}</div>}
+          <button className="auth-submit" type="submit" disabled={submitting} aria-label="Open Borrower">{submitting ? 'SIGNING IN…' : 'LOGIN'}</button>
+        </form>
+
+        <div className="auth-foot">Borrower access is provisioned through the PiHub identity and authorization service.</div>
+      </div>
     </section>
-    <aside className="login-hero">
-      <div className="login-hero-content"><span>PIHUB / BORROWER</span><h2>Move financing requests from application through servicing with less friction.</h2><p>Complete requirements, answer PiHub requests, manage documents, follow financing milestones and handle borrower obligations after funding.</p>
-        <div className="hero-metrics"><div><strong>1</strong><span>Canonical deal lifecycle</span></div><div><strong>2</strong><span>Origination + servicing</span></div><div><strong>0</strong><span>Cross-module login leakage</span></div></div>
+
+    <aside className="auth-visual" aria-hidden="true">
+      <div className="auth-visual-atmosphere" />
+      <div className="auth-visual-copy" data-motion="auth-visual-copy">
+        <span>FINANCING DECISIONS, STRUCTURED CLEARLY</span>
+        <h2>One workspace for financing, execution and servicing.</h2>
+        <p>Complete borrower requirements, answer PiHub requests, manage documents and follow every financing milestone without unnecessary visual noise.</p>
+        <div className="auth-proof">
+          <div><strong>01</strong><small>APPLICATIONS</small></div>
+          <div><strong>02</strong><small>PIHUB REQUESTS</small></div>
+          <div><strong>03</strong><small>SERVICING</small></div>
+        </div>
       </div>
     </aside>
   </main>;

@@ -21,15 +21,18 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 });
 
-test('Borrower login remains Borrower-only and keyboard skip link does not consume shell geometry', async ({ page }) => {
+test('Borrower login uses the unified PiHub access shell while authentication remains Borrower-scoped', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
-  await expect(page.getByText('Investor', { exact: true })).toHaveCount(0);
-  await expect(page.getByText('Advisory', { exact: true })).toHaveCount(0);
-  await expect(page.getByText('Admin', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible();
+  await expect(page.getByText('Investor', { exact: true })).toBeVisible();
+  await expect(page.getByText('Borrower', { exact: true })).toBeVisible();
+  await expect(page.getByText('Advisory', { exact: true })).toBeVisible();
+  await expect(page.getByText('Admin', { exact: true })).toBeVisible();
+  await expect(page.locator('.pihub-access-tabs .is-active')).toHaveText('Borrower');
   await page.getByRole('button', { name: 'Open Borrower' }).click();
   const topbar = page.locator('.topbar');
   await expect(topbar).toHaveCSS('top', '0px');
+  await expect(page.locator('.sidebar .ap-nav-item[aria-current="page"]')).toHaveCount(1);
   const skip = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skip).toHaveCSS('position', 'fixed');
   await page.evaluate(() => {

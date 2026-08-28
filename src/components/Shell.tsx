@@ -30,7 +30,6 @@ const navSections: readonly NavSection[] = [
 ];
 
 const nav: NavEntry[] = navSections.flatMap((section) => [...section.items]);
-
 const searchItems = [...nav.map(([href, key]) => ({ href, key })), { href: '/notifications', key: 'notificationsPage' as const }];
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -105,23 +104,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
     navigate('/login', { replace: true });
   };
 
-  return <div className="app-shell" data-workspace="borrower">
+  return <div className="app-shell pihub-shell" data-workspace="borrower">
     <a className="skip-link" href="#main-content">Skip to main content</a>
-    <aside className={`sidebar ${navOpen ? 'is-open' : ''}`} aria-label="Borrower navigation">
-      <div className="brand"><span className="brand-mark">PH</span><div><strong>PiHub</strong><small>Borrower</small></div></div>
-      <div className="sidebar-context"><span>Workspace</span><strong>Borrower</strong><small>{app.id}</small></div>
-      <nav>
-        {navSections.map((section)=><div className="nav-section" key={section.label}><span className="nav-section-label">{section.label}</span>{section.items.map(([href,key,icon])=><NavLink key={href} to={href} end={href==='/' } className={({isActive})=>`nav-item ${isActive?'active':''}`} onClick={()=>setNavOpen(false)}><Icon name={icon} size={17}/><span>{t(state.locale,key)}</span></NavLink>)}</div>)}
+    <aside className={`sidebar pihub-sidebar ${navOpen ? 'is-open' : ''}`} aria-label="Borrower navigation">
+      <div className="brand pihub-brand"><span className="brand-mark">PH</span><div><strong>PiHub Borrower</strong><small>BORROWER WORKSPACE</small></div></div>
+      <nav className="pihub-sidebar-nav" aria-label="Workspace">
+        {navSections.map((section)=><div className="nav-section" key={section.label}><span className="nav-section-label">{section.label}</span>{section.items.map(([href,key,icon])=><NavLink key={href} to={href} end={href==='/' || href==='/applications'} className={({isActive})=>`nav-item ap-nav-item ${isActive?'active':''}`} onClick={()=>setNavOpen(false)}><Icon name={icon} size={17}/><span className="ap-nav-label">{t(state.locale,key)}</span></NavLink>)}</div>)}
       </nav>
-      <div className="sidebar-foot"><span className="demo-dot" />{mode === 'demo' ? t(state.locale, 'demo') : 'PiHub connected'}<small>{mode === 'demo' ? 'Local browser data · integration events queued' : 'Server session · canonical platform records'}</small></div>
+      <div className="sidebar-foot pihub-sidebar-foot"><div className="pihub-system-line"><span className="demo-dot" /><strong>{mode === 'demo' ? 'DEMO DATA' : 'LIVE WORKSPACE'}</strong><span>EUR</span></div><small>{mode === 'demo' ? 'Local browser data · integration events queued' : 'Server session · canonical platform records'}</small></div>
     </aside>
 
     {navOpen && <button className="nav-scrim" aria-label="Close navigation" onClick={() => setNavOpen(false)} />}
 
-    <header className="topbar">
+    <header className="topbar pihub-topbar">
       <div className="topbar-left">
         <button className="icon-button mobile-menu" aria-label="Open navigation" onClick={() => setNavOpen(true)}><Icon name="menu" /></button>
-        <div className="crumb"><strong>Borrower</strong><span>{app.name}</span></div>
+        <div className={`pihub-environment-chip ${mode === 'demo' ? 'is-demo' : 'is-live'}`}>
+          <span className="pihub-environment-dot" />
+          <span className="pihub-environment-copy"><strong>{mode === 'demo' ? 'Demo workspace' : 'PiHub connected'}</strong><small>{mode === 'demo' ? 'Local browser data · no live records' : `${app.name} · canonical platform records`}</small></span>
+        </div>
       </div>
       <div className="topbar-actions">
         <div className={`save-pill ${connectionStatus === 'error' ? 'is-error' : ''}`} aria-live="polite" title={connectionError}><span className="save-dot" />{saveLabel}</div>
@@ -133,8 +134,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>}
         </div>
         <div className="language-switch" aria-label="Language">
-          <button className={state.locale === 'en' ? 'active' : ''} onClick={() => setLocale('en')}>EN</button>
-          <button className={state.locale === 'de' ? 'active' : ''} onClick={() => setLocale('de')}>DE</button>
+          <button className={state.locale === 'en' ? 'active' : ''} aria-pressed={state.locale === 'en'} onClick={() => setLocale('en')}>EN</button>
+          <button className={state.locale === 'de' ? 'active' : ''} aria-pressed={state.locale === 'de'} onClick={() => setLocale('de')}>DE</button>
         </div>
         <button className="icon-button notification-button" aria-label={`${t(state.locale, 'notifications')}${unread ? `, ${unread} unread` : ''}`} onClick={() => setNotificationsOpen((value) => !value)}>
           <Icon name="bell" />{unread > 0 && <span className="badge">{unread}</span>}
@@ -163,6 +164,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </div>}
     </header>
 
-    <main id="main-content" className="main-content" tabIndex={-1} data-route={location.pathname}>{connectionStatus === 'error' && <div className="sync-warning" role="alert"><span><strong>PiHub sync needs attention.</strong><small>{connectionError ?? 'The last server update was not confirmed.'}</small></span><button className="button secondary" onClick={() => void reloadFromApi()}>Reload server state</button></div>}{children}</main>
+    <main id="main-content" className="main-content pihub-workspace" tabIndex={-1} data-route={location.pathname}>{connectionStatus === 'error' && <div className="sync-warning" role="alert"><span><strong>PiHub sync needs attention.</strong><small>{connectionError ?? 'The last server update was not confirmed.'}</small></span><button className="button secondary" onClick={() => void reloadFromApi()}>Reload server state</button></div>}{children}</main>
   </div>;
 }

@@ -1,0 +1,71 @@
+/* PiHub canonical product tokens and shared primitives. */
+:root {
+  --pihub-space-1: 4px;
+  --pihub-space-2: 8px;
+  --pihub-space-3: 12px;
+  --pihub-space-4: 16px;
+  --pihub-space-5: 24px;
+  --pihub-space-6: 32px;
+  --pihub-space-7: 48px;
+  --pihub-control-sm: 36px;
+  --pihub-control: 44px;
+  --pihub-topbar: 72px;
+  --pihub-sidebar-width: 232px;
+  --pihub-content-max: 1480px;
+  --pihub-radius-sm: 8px;
+  --pihub-radius-md: 10px;
+  --pihub-radius-lg: 16px;
+  --pihub-workspace: #f5f7fb;
+  --pihub-surface: #ffffff;
+  --pihub-surface-soft: #f8faff;
+  --pihub-text: #101a2e;
+  --pihub-text-secondary: #536078;
+  --pihub-text-muted: #6d7b91;
+  --pihub-border: #dce4ef;
+  --pihub-border-soft: #e8edf4;
+  --pihub-primary: #2457e6;
+  --pihub-primary-hover: #1e49c7;
+  --pihub-accent: #4f6ff7;
+  --pihub-sidebar: #0b1220;
+  --pihub-sidebar-raised: #111a2b;
+  --pihub-sidebar-muted: #8b9ab2;
+  --pihub-nav-marker: #5b8cff;
+  --pihub-nav-icon-active: #7da2ff;
+  --pihub-success: #15803d;
+  --pihub-warning: #b45309;
+  --pihub-danger: #b42318;
+  --pihub-info: #175cd3;
+  --pihub-shadow-card: 0 1px 2px rgba(13, 24, 48, .025), 0 12px 30px rgba(13, 24, 48, .04);
+  --pihub-shadow-float: 0 18px 50px rgba(13, 24, 48, .16);
+  --pihub-motion-quick: 120ms;
+  --pihub-motion-standard: 180ms;
+  --pihub-motion-panel: 280ms;
+  --pihub-ease-enter: cubic-bezier(.16, 1, .3, 1);
+  --pihub-ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --pihub-ease-exit: cubic-bezier(.3, 0, 1, 1);
+  --header: var(--pihub-topbar);
+  --rail: var(--pihub-sidebar-width);
+  --content-max: var(--pihub-content-max);
+  --navy: var(--pihub-sidebar);
+  --navy-2: var(--pihub-sidebar-raised);
+  --blue: var(--pihub-primary);
+  --blue-strong: var(--pihub-primary-hover);
+  --blue-soft: #eef3ff;
+  --text: var(--pihub-text);
+  --muted: var(--pihub-text-muted);
+  --border: var(--pihub-border);
+  --border-strong: #cbd5e1;
+  --surface: var(--pihub-surface);
+  --radius: var(--pihub-radius-lg);
+}
+html,body,#root{min-height:100%;background:var(--pihub-workspace)}
+body{color:var(--pihub-text);background:var(--pihub-workspace);font-family:'IBM Plex Sans',Inter,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+.button{min-height:var(--pihub-control);border-radius:var(--pihub-radius-md);font-size:12.5px;transition:border-color var(--pihub-motion-standard) var(--pihub-ease-standard),background-color var(--pihub-motion-standard) var(--pihub-ease-standard),color var(--pihub-motion-standard) var(--pihub-ease-standard),box-shadow var(--pihub-motion-standard) var(--pihub-ease-standard),transform var(--pihub-motion-quick) var(--pihub-ease-standard)}
+.button.primary{background:var(--pihub-primary);border-color:var(--pihub-primary)}
+.button.primary:hover:not(:disabled){background:var(--pihub-primary-hover);border-color:var(--pihub-primary-hover)}
+.button:active:not(:disabled){transform:translateY(1px)}
+.card{border-color:var(--pihub-border);border-radius:var(--pihub-radius-lg);background:var(--pihub-surface);box-shadow:var(--pihub-shadow-card)}
+.page-head h1{color:var(--pihub-text)}
+.page-head p,.card-head p{color:var(--pihub-text-secondary)}
+.route-stage{max-width:var(--pihub-content-max)}
+.data-head{color:#536078}

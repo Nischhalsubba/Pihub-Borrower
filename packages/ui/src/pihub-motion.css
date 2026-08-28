@@ -1,0 +1,2 @@
+/* PiHub motion policy: calm, functional, transform/opacity first. */
+@media(prefers-reduced-motion:reduce){.pihub-sidebar .ap-nav-item,.sidebar.pihub-sidebar,.button,.auth-card,.auth-visual-copy,.auth-submit{animation:none!important;transition-duration:.01ms!important}.pihub-sidebar .ap-nav-item:hover,.auth-submit:hover:not(:disabled){transform:none!important}}
