@@ -8,12 +8,22 @@ async function login(page: any) {
 }
 
 async function openShellLink(page: any, name: string) {
+  const sidebar = page.locator('.sidebar');
   const mobileMenu = page.getByRole('button', { name: 'Open navigation' });
   if (await mobileMenu.isVisible()) {
     await mobileMenu.click();
-    await expect(page.locator('.sidebar')).toHaveClass(/is-open/);
+    await expect(sidebar).toHaveClass(/is-open/);
+    await page.waitForFunction(() => {
+      const element = document.querySelector('.sidebar');
+      if (!(element instanceof HTMLElement)) return false;
+      const rect = element.getBoundingClientRect();
+      return rect.left >= -1 && rect.right > 0 && rect.width > 0;
+    });
   }
-  await page.locator('.sidebar').getByRole('link', { name, exact: true }).click();
+  const link = sidebar.getByRole('link', { name, exact: true });
+  await link.scrollIntoViewIfNeeded();
+  await expect(link).toBeInViewport();
+  await link.click();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -29,16 +39,17 @@ test('Borrower login is module-scoped while retaining the unified PiHub access s
   await expect(page.locator('.pihub-access-tabs')).toHaveCount(0);
   for (const moduleName of ['Investor', 'Advisory', 'Admin']) await expect(page.getByText(moduleName, { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Open Borrower' }).click();
+  await expect(page).toHaveURL(/\/$/);
   const topbar = page.locator('.topbar');
   await expect(topbar).toHaveCSS('top', '0px');
   await expect(page.locator('.pihub-route-motion')).toBeVisible();
   await expect(page.locator('.sidebar .ap-nav-item[aria-current="page"]')).toHaveCount(1);
+
+  // Verify the skip link from a fresh authenticated shell load. Chromium and Firefox
+  // intentionally preserve sequential focus history across same-document SPA navigation.
+  await page.goto('/');
   const skip = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skip).toHaveCSS('position', 'fixed');
-  await page.evaluate(() => {
-    const active = document.activeElement;
-    if (active instanceof HTMLElement) active.blur();
-  });
   await page.keyboard.press('Tab');
   await expect(skip).toBeFocused();
 });
