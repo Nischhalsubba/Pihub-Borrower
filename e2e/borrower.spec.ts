@@ -49,12 +49,24 @@ async function openPrimary(page: any, name: string) {
       const element = document.querySelector('.sidebar');
       if (!(element instanceof HTMLElement)) return false;
       const rect = element.getBoundingClientRect();
-      return rect.left >= -1 && rect.right > 0 && rect.width > 0;
+      const transform = getComputedStyle(element).transform;
+      const translateX = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m41;
+      return Math.abs(rect.left) < 1 && rect.right > 0 && rect.width > 0 && Math.abs(translateX) < 1;
     });
   }
   const link = sidebar.getByRole('link', { name, exact: true });
-  await link.scrollIntoViewIfNeeded();
-  await expect(link).toBeInViewport();
+  await expect(link).toBeVisible();
+  await link.evaluate((element) => {
+    const scroller = element.closest('.sidebar');
+    if (!(scroller instanceof HTMLElement)) return;
+    const target = element.getBoundingClientRect();
+    const frame = scroller.getBoundingClientRect();
+    scroller.scrollTop += target.top - frame.top - ((scroller.clientHeight - target.height) / 2);
+  });
+  await expect.poll(() => link.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
+  })).toBe(true);
   await link.click();
 }
 
@@ -91,13 +103,19 @@ test('Borrower login is module-scoped while retaining the unified PiHub access s
   await expect(page.locator('.sidebar .ap-nav-item[aria-current="page"]')).toHaveCount(1);
   await expect(page.locator('.sidebar .ap-nav-item')).toHaveCount(8);
 
-  // Verify the skip link from a fresh authenticated shell load. Chromium and Firefox
-  // intentionally preserve sequential focus history across same-document SPA navigation.
+  // Verify sequential keyboard focus from a deterministic document origin. Some
+  // mobile/browser engines preserve focus history across SPA navigation even after goto().
   await page.goto('/');
   const skip = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skip).toHaveCSS('position', 'fixed');
+  await page.evaluate(() => {
+    document.body.setAttribute('tabindex', '-1');
+    document.body.focus();
+  });
+  await expect(page.locator('body')).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(skip).toBeFocused();
+  await page.evaluate(() => document.body.removeAttribute('tabindex'));
 });
 
 test('merged sidebar keeps related borrower tools in a seamless contextual workflow', async ({ page }) => {
@@ -213,10 +231,14 @@ test('scenario lab, calendar, Copilot and complaints are functional Borrower wor
   await page.getByRole('button', { name: 'Which documents are missing?' }).click();
   await expect(page.getByText('PiHub Copilot').last()).toBeVisible();
   await openShellLink(page, 'Complaints & disputes');
+  const complaints = page.locator('.complaint-row');
+  const complaintCount = await complaints.count();
   await page.getByLabel('Subject').fill('Service follow-up');
   await page.getByLabel('Description').fill('Please review the response timing on the outstanding request.');
   await page.getByRole('button', { name: 'Submit complaint' }).click();
-  await expect(page.getByText(/Complaint submitted/i)).toBeVisible();
+  await expect(complaints).toHaveCount(complaintCount + 1);
+  await expect(complaints.filter({ hasText: 'Service follow-up' }).last()).toBeVisible();
+  await expect(page.getByLabel('Subject')).toHaveValue('');
 });
 
 test('core authenticated routes have no serious or critical accessibility violations', async ({ page }) => {
