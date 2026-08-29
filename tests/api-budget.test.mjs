@@ -52,6 +52,13 @@ test('telemetry is batched and duplicate events are compressed before transport'
   assert.match(telemetry, /visibilityState === 'hidden'/);
 });
 
+test('completed malware scans do not call the external scanner again on retries', () => {
+  const scan = read('supabase/functions/document-scan/index.ts');
+  assert.match(scan, /malware_status,sha256/);
+  assert.match(scan, /version\.malware_status === 'clean' \|\| version\.malware_status === 'blocked'/);
+  assert.match(scan, /cached: true/);
+});
+
 test('request budget documentation forbids polling and per-keystroke API calls', () => {
   const doc = read('docs/API_REQUEST_BUDGET.md');
   assert.match(doc, /Background idle tab \| 0 polling requests/);
