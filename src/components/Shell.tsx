@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from './Icons';
 import type { IconName } from './Icons';
 import { t } from '../i18n';
@@ -122,7 +122,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <nav className="pihub-sidebar-nav" aria-label="Workspace">
         <div className="nav-section"><span className="nav-section-label">Workspace</span>{primaryNav.map((section) => {
           const isActive = section.routes.some((route) => routeMatches(location.pathname, route));
-          return <NavLink key={section.href} to={section.href} className={() => `nav-item ap-nav-item ${isActive ? 'active' : ''}`} aria-current={isActive ? 'page' : undefined} onClick={()=>setNavOpen(false)}><Icon name={section.icon} size={17}/><span className="ap-nav-label">{t(state.locale, section.key)}</span></NavLink>;
+          return <Link key={section.href} to={section.href} className={`nav-item ap-nav-item ${isActive ? 'active' : ''}`} aria-current={isActive ? 'page' : undefined} onClick={()=>setNavOpen(false)}><Icon name={section.icon} size={17}/><span className="ap-nav-label">{t(state.locale, section.key)}</span></Link>;
         })}</div>
       </nav>
       <div className="sidebar-foot pihub-sidebar-foot"><div className="pihub-system-line"><span className="demo-dot" /><strong>{mode === 'demo' ? 'DEMO DATA' : 'LIVE WORKSPACE'}</strong><span>EUR</span></div><small>{mode === 'demo' ? 'Local browser data · integration events queued' : 'Server session · canonical platform records'}</small></div>
