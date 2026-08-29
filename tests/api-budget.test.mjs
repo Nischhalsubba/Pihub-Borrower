@@ -17,10 +17,13 @@ test('GET requests are coalesced and short-lived caches prevent duplicate startu
 
 test('session and login may hydrate Borrower state in the same request', () => {
   const api = read('src/services/platformApi.ts');
+  const store = read('src/state/store.tsx');
   const doc = read('docs/API_REQUEST_BUDGET.md');
   assert.match(api, /interface SessionResult[\s\S]*snapshot\?: BorrowerState/);
   assert.match(api, /getSession[\s\S]*if \(result\.snapshot\) primeBorrowerSnapshot\(result\.snapshot\)/);
   assert.match(api, /signIn[\s\S]*if \(result\.snapshot\) primeBorrowerSnapshot\(result\.snapshot\)/);
+  assert.match(store, /if \(mode === 'api' && auth\.status === 'authenticated'\) void loadFromApi\(false\)/);
+  assert.match(store, /const reloadFromApi = useCallback\(\(\) => loadFromApi\(true\)/);
   assert.match(doc, /Existing authenticated app load \| 1 request when session includes snapshot/);
 });
 
@@ -41,6 +44,7 @@ test('accepted commands can return canonical state and legacy responses reconcil
   assert.match(store, /COMMAND_RECONCILE_DELAY_MS = 4_000/);
   assert.match(store, /scheduleReconciliation/);
   assert.match(store, /if \(result\.snapshot\)/);
+  assert.match(store, /loadFromApi\(true\)/);
   assert.doesNotMatch(store, /sendBorrowerCommand\([\s\S]{0,250}\)\.then\(async \(\) => \{\s*await reloadFromApi\(\)/);
 });
 
