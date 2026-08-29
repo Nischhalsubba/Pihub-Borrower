@@ -1,13 +1,45 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+const sectionFor: Record<string, string> = {
+  'Financing products': 'Financing',
+  'Pre-qualification': 'Financing',
+  'My applications': 'Applications',
+  'New application': 'Applications',
+  'Financing request': 'Applications',
+  'Company': 'Applications',
+  'Project / Property': 'Applications',
+  'Financials': 'Applications',
+  'Connected data': 'Applications',
+  'Data room': 'Applications',
+  'Documents': 'Applications',
+  'PiHub requests': 'Applications',
+  'Messages': 'Applications',
+  'Activity': 'Applications',
+  'Application versions': 'Applications',
+  'Scenario lab': 'Execution',
+  'Negotiation': 'Execution',
+  'Terms & closing': 'Execution',
+  'Draws & inspections': 'Execution',
+  'Calendar': 'Execution',
+  'Loan servicing': 'Servicing',
+  'Portfolio': 'Servicing',
+  'Payments & statements': 'Servicing',
+  'ESG & sustainability': 'Servicing',
+  'Organization & team': 'Organization',
+  'Disclosures & consent': 'Organization',
+  'Account': 'Organization',
+  'Privacy & data rights': 'Organization',
+  'Complaints & disputes': 'Organization'
+};
+
 async function login(page: any) {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Open Borrower' }).click();
   await expect(page).toHaveURL(/\/$/);
 }
 
-async function openShellLink(page: any, name: string) {
+async function openPrimary(page: any, name: string) {
   const sidebar = page.locator('.sidebar');
   const mobileMenu = page.getByRole('button', { name: 'Open navigation' });
   if (await mobileMenu.isVisible()) {
@@ -24,6 +56,19 @@ async function openShellLink(page: any, name: string) {
   await link.scrollIntoViewIfNeeded();
   await expect(link).toBeInViewport();
   await link.click();
+}
+
+async function openShellLink(page: any, name: string) {
+  const primary = sectionFor[name];
+  if (!primary) {
+    await openPrimary(page, name);
+    return;
+  }
+  await openPrimary(page, primary);
+  const contextLink = page.locator('.workspace-context-nav').getByRole('link', { name, exact: true });
+  await contextLink.scrollIntoViewIfNeeded();
+  await expect(contextLink).toBeInViewport();
+  await contextLink.click();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -44,6 +89,7 @@ test('Borrower login is module-scoped while retaining the unified PiHub access s
   await expect(topbar).toHaveCSS('top', '0px');
   await expect(page.locator('.pihub-route-motion')).toBeVisible();
   await expect(page.locator('.sidebar .ap-nav-item[aria-current="page"]')).toHaveCount(1);
+  await expect(page.locator('.sidebar .ap-nav-item')).toHaveCount(8);
 
   // Verify the skip link from a fresh authenticated shell load. Chromium and Firefox
   // intentionally preserve sequential focus history across same-document SPA navigation.
@@ -52,6 +98,18 @@ test('Borrower login is module-scoped while retaining the unified PiHub access s
   await expect(skip).toHaveCSS('position', 'fixed');
   await page.keyboard.press('Tab');
   await expect(skip).toBeFocused();
+});
+
+test('merged sidebar keeps related borrower tools in a seamless contextual workflow', async ({ page }) => {
+  await login(page);
+  await openPrimary(page, 'Applications');
+  await expect(page.locator('.workspace-context-nav')).toBeVisible();
+  for (const item of ['My applications', 'New application', 'Financing request', 'Financials', 'Documents', 'PiHub requests', 'Application versions']) {
+    await expect(page.locator('.workspace-context-nav').getByRole('link', { name: item, exact: true })).toBeVisible();
+  }
+  await page.locator('.workspace-context-nav').getByRole('link', { name: 'Documents', exact: true }).click();
+  await expect(page).toHaveURL(/\/documents$/);
+  await expect(page.locator('.sidebar').getByRole('link', { name: 'Applications', exact: true })).toHaveAttribute('aria-current', 'page');
 });
 
 test('financing product discovery has no decorative controls and eligibility typography stays structured', async ({ page }) => {

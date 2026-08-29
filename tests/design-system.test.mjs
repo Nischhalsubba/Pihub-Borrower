@@ -51,11 +51,23 @@ test('PiHub spacing uses one semantic scale for page, section, grid and card geo
 
 test('sidebar uses one canonical active-state contract and route semantics', () => {
   assert.match(shell, /ap-nav-item/);
-  assert.ok(shell.includes("end={href==='/' || href==='/applications'}"));
+  assert.match(shell, /section\.routes\.some\(\(route\) => routeMatches\(location\.pathname, route\)\)/);
+  assert.match(shell, /aria-current=\{isActive \? 'page' : undefined\}/);
   assert.doesNotMatch(shell, /sidebar-context/);
   assert.match(shellCss, /translateX\(3px\)/);
   assert.ok(shellCss.includes('left:-12px;top:11px;width:3px;height:22px'));
   assert.match(shellCss, /var\(--pihub-sidebar-raised\)/);
+});
+
+test('sidebar information architecture is consolidated into eight borrower goals with contextual workflow navigation', () => {
+  for (const key of ['overview', 'financingWorkspace', 'applicationsWorkspace', 'executionWorkspace', 'servicingWorkspace', 'organizationWorkspace', 'copilot', 'help']) assert.ok(shell.includes(`key: '${key}'`), `Missing primary borrower goal: ${key}`);
+  assert.match(shell, /const primaryNav: readonly PrimaryNavItem\[\] = \[/);
+  assert.match(shell, /workspace-context-nav/);
+  assert.match(shell, /sectionNavigationHint/);
+  assert.match(shellCss, /\.workspace-context-shell/);
+  assert.match(shellCss, /\.workspace-context-link\.active/);
+  assert.match(shellCss, /overflow-x:auto/);
+  for (const route of ['/products', '/qualification', '/applications', '/application', '/documents', '/requests', '/scenario-lab', '/negotiation', '/servicing', '/payments', '/team', '/privacy']) assert.ok(shell.includes(`'${route}'`), `Merged navigation lost route ${route}`);
 });
 
 test('Borrower login is module-scoped and exposes no Investor, Advisory or Admin selector', () => {

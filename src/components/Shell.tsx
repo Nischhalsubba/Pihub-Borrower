@@ -9,27 +9,37 @@ import { useAuth } from '../auth/AuthContext';
 import { trackUiEvent } from '../services/telemetry';
 
 type NavEntry = readonly [string, TranslationKey, IconName];
-type NavSection = { label: string; items: readonly NavEntry[] };
+type PrimaryNavItem = {
+  href: string;
+  key: TranslationKey;
+  icon: IconName;
+  routes: readonly string[];
+  items: readonly NavEntry[];
+};
 
-const navSections: readonly NavSection[] = [
-  { label: 'Workspace', items: [
-    ['/', 'overview', 'home'], ['/portfolio', 'portfolio', 'applications'], ['/products', 'products', 'products'], ['/qualification', 'qualification', 'activity'], ['/applications', 'applications', 'applications'], ['/applications/new', 'newApplication', 'plus']
+const primaryNav: readonly PrimaryNavItem[] = [
+  { href: '/', key: 'overview', icon: 'home', routes: ['/'], items: [] },
+  { href: '/products', key: 'financingWorkspace', icon: 'products', routes: ['/products', '/qualification'], items: [
+    ['/products', 'products', 'products'], ['/qualification', 'qualification', 'activity']
   ]},
-  { label: 'Application', items: [
-    ['/application', 'financing', 'money'], ['/company', 'company', 'building'], ['/project', 'project', 'project'], ['/financials', 'financials', 'chart'], ['/connections', 'connections', 'external'], ['/data-room', 'dataRoom', 'document'], ['/requests', 'requests', 'request'], ['/messages', 'messages', 'message'], ['/activity', 'activity', 'activity'], ['/versions', 'versions', 'activity']
+  { href: '/applications', key: 'applicationsWorkspace', icon: 'applications', routes: ['/applications', '/application', '/company', '/project', '/financials', '/connections', '/data-room', '/documents', '/requests', '/messages', '/activity', '/versions'], items: [
+    ['/applications', 'applications', 'applications'], ['/applications/new', 'newApplication', 'plus'], ['/application', 'financing', 'money'], ['/company', 'company', 'building'], ['/project', 'project', 'project'], ['/financials', 'financials', 'chart'], ['/connections', 'connections', 'external'], ['/data-room', 'dataRoom', 'document'], ['/documents', 'documents', 'document'], ['/requests', 'requests', 'request'], ['/messages', 'messages', 'message'], ['/activity', 'activity', 'activity'], ['/versions', 'versions', 'activity']
   ]},
-  { label: 'Execution', items: [
+  { href: '/scenario-lab', key: 'executionWorkspace', icon: 'chart', routes: ['/scenario-lab', '/negotiation', '/closing', '/capital', '/calendar'], items: [
     ['/scenario-lab', 'scenarioLab', 'chart'], ['/negotiation', 'negotiation', 'message'], ['/closing', 'closing', 'closing'], ['/capital', 'capital', 'money'], ['/calendar', 'calendar', 'activity']
   ]},
-  { label: 'Post-funding', items: [
-    ['/servicing', 'servicing', 'activity'], ['/payments', 'payments', 'money'], ['/esg', 'esg', 'project']
+  { href: '/servicing', key: 'servicingWorkspace', icon: 'activity', routes: ['/portfolio', '/servicing', '/payments', '/esg'], items: [
+    ['/servicing', 'servicing', 'activity'], ['/portfolio', 'portfolio', 'applications'], ['/payments', 'payments', 'money'], ['/esg', 'esg', 'project']
   ]},
-  { label: 'Organization', items: [
-    ['/disclosures', 'disclosures', 'document'], ['/team', 'team', 'team'], ['/account', 'account', 'account'], ['/privacy', 'privacy', 'document'], ['/complaints', 'complaints', 'request'], ['/copilot', 'copilot', 'help'], ['/help', 'help', 'help']
-  ]}
+  { href: '/team', key: 'organizationWorkspace', icon: 'team', routes: ['/disclosures', '/team', '/account', '/privacy', '/complaints'], items: [
+    ['/team', 'team', 'team'], ['/disclosures', 'disclosures', 'document'], ['/account', 'account', 'account'], ['/privacy', 'privacy', 'document'], ['/complaints', 'complaints', 'request']
+  ]},
+  { href: '/copilot', key: 'copilot', icon: 'help', routes: ['/copilot'], items: [] },
+  { href: '/help', key: 'help', icon: 'help', routes: ['/help'], items: [] }
 ];
 
-const nav: NavEntry[] = navSections.flatMap((section) => [...section.items]);
+const routeMatches = (pathname: string, route: string) => route === '/' ? pathname === '/' : pathname === route || pathname.startsWith(`${route}/`);
+const nav: NavEntry[] = primaryNav.flatMap((section) => section.items.length ? [...section.items] : [[section.href, section.key, section.icon] as NavEntry]);
 const searchItems = [...nav.map(([href, key]) => ({ href, key })), { href: '/notifications', key: 'notificationsPage' as const }];
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -42,6 +52,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const unread = state.notifications.filter((item) => !item.read).length;
+  const currentSection = primaryNav.find((section) => section.routes.some((route) => routeMatches(location.pathname, route)));
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -109,7 +120,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <aside className={`sidebar pihub-sidebar ${navOpen ? 'is-open' : ''}`} aria-label="Borrower navigation">
       <div className="brand pihub-brand"><span className="brand-mark">PH</span><div><strong>PiHub Borrower</strong><small>BORROWER WORKSPACE</small></div></div>
       <nav className="pihub-sidebar-nav" aria-label="Workspace">
-        {navSections.map((section)=><div className="nav-section" key={section.label}><span className="nav-section-label">{section.label}</span>{section.items.map(([href,key,icon])=><NavLink key={href} to={href} end={href==='/' || href==='/applications'} className={({isActive})=>`nav-item ap-nav-item ${isActive?'active':''}`} onClick={()=>setNavOpen(false)}><Icon name={icon} size={17}/><span className="ap-nav-label">{t(state.locale,key)}</span></NavLink>)}</div>)}
+        <div className="nav-section"><span className="nav-section-label">Workspace</span>{primaryNav.map((section) => {
+          const isActive = section.routes.some((route) => routeMatches(location.pathname, route));
+          return <NavLink key={section.href} to={section.href} className={() => `nav-item ap-nav-item ${isActive ? 'active' : ''}`} aria-current={isActive ? 'page' : undefined} onClick={()=>setNavOpen(false)}><Icon name={section.icon} size={17}/><span className="ap-nav-label">{t(state.locale, section.key)}</span></NavLink>;
+        })}</div>
       </nav>
       <div className="sidebar-foot pihub-sidebar-foot"><div className="pihub-system-line"><span className="demo-dot" /><strong>{mode === 'demo' ? 'DEMO DATA' : 'LIVE WORKSPACE'}</strong><span>EUR</span></div><small>{mode === 'demo' ? 'Local browser data · integration events queued' : 'Server session · canonical platform records'}</small></div>
     </aside>
@@ -164,6 +178,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </div>}
     </header>
 
-    <main id="main-content" className="main-content pihub-workspace" tabIndex={-1} data-route={location.pathname}>{connectionStatus === 'error' && <div className="sync-warning" role="alert"><span><strong>PiHub sync needs attention.</strong><small>{connectionError ?? 'The last server update was not confirmed.'}</small></span><button className="button secondary" onClick={() => void reloadFromApi()}>Reload server state</button></div>}{children}</main>
+    <main id="main-content" className="main-content pihub-workspace" tabIndex={-1} data-route={location.pathname}>
+      {connectionStatus === 'error' && <div className="sync-warning" role="alert"><span><strong>PiHub sync needs attention.</strong><small>{connectionError ?? 'The last server update was not confirmed.'}</small></span><button className="button secondary" onClick={() => void reloadFromApi()}>Reload server state</button></div>}
+      {currentSection && currentSection.items.length > 1 && <section className="workspace-context-shell" aria-label={`${t(state.locale, currentSection.key)} workflow`}>
+        <div className="workspace-context-heading"><span className="eyebrow">{t(state.locale, currentSection.key)}</span><small>{t(state.locale, 'sectionNavigationHint')}</small></div>
+        <nav className="workspace-context-nav" aria-label={`${t(state.locale, currentSection.key)} sections`}>
+          {currentSection.items.map(([href, key, icon]) => {
+            const active = routeMatches(location.pathname, href);
+            return <NavLink key={href} to={href} className={() => `workspace-context-link ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}><Icon name={icon} size={15}/><span>{t(state.locale, key)}</span></NavLink>;
+          })}
+        </nav>
+      </section>}
+      {children}
+    </main>
   </div>;
 }
