@@ -1,20 +1,33 @@
 openapi: 3.1.0
 info:
   title: PiHub Borrower API
-  version: 0.2.0
+  version: 0.3.0
+  description: |
+    Low-round-trip Borrower API contract. Session/login may return the authorized
+    Borrower snapshot so authentication and initial hydration require one network
+    request. Mutation commands should return canonical state or a bounded canonical
+    delta from the same transaction so accepted writes do not require a second read.
 servers:
   - url: https://api.pihub-pi.com
 paths:
   /api/v1/session:
     get:
-      summary: Resolve the HttpOnly PiHub session and authorized modules
+      summary: Resolve the HttpOnly PiHub session, authorized modules and optional Borrower snapshot
+      description: |
+        For Borrower-authorized sessions the preferred response includes the canonical
+        Borrower snapshot. This lets the client authenticate and hydrate with one call.
+        Responses contain private account and finance projections and must not be stored
+        in shared/public HTTP caches.
       responses:
-        '200': { description: Session result }
+        '200': { description: Session result, optionally including canonical Borrower snapshot }
   /api/v1/auth/login:
     post:
       summary: Establish a Borrower-authorized server session
+      description: |
+        The preferred success response contains both the authorized user projection and
+        canonical Borrower snapshot, eliminating an immediate bootstrap request.
       responses:
-        '200': { description: Authenticated }
+        '200': { description: Authenticated, optionally including canonical Borrower snapshot }
         '401': { description: Invalid credentials }
         '403': { description: Account is not authorized for Borrower }
   /api/v1/auth/logout:
@@ -30,6 +43,9 @@ paths:
   /api/v1/borrower/bootstrap:
     get:
       summary: Return the authorized Borrower projection of canonical platform state
+      description: |
+        Fallback/explicit reconciliation endpoint. Clients coalesce concurrent reads and
+        use a very short in-memory TTL. There is no background bootstrap polling.
       responses:
         '200': { description: Borrower snapshot }
         '401': { description: Not authenticated }
@@ -37,13 +53,17 @@ paths:
   /api/v1/borrower/commands:
     post:
       summary: Execute a server-authorized, idempotent Borrower command
+      description: |
+        The server should commit domain state, audit evidence and outbox events in one
+        transaction and return the resulting canonical Borrower snapshot or bounded delta.
+        Returning canonical state here removes the historical command-then-bootstrap round trip.
       parameters:
         - in: header
           name: Idempotency-Key
           required: true
           schema: { type: string }
       responses:
-        '200': { description: Command accepted }
+        '200': { description: Command accepted with version and preferably canonical snapshot or delta }
         '409': { description: Version conflict }
         '422': { description: Domain validation failure }
   /api/v1/borrower/outbox:
@@ -63,13 +83,13 @@ paths:
   /api/v1/borrower/document-intelligence/jobs:
     post:
       summary: Queue authorized documents for classification, extraction and validation
-      description: A self-hosted Docling-compatible worker may parse content; authoritative validation and any fraud/tamper decision remains server-side.
+      description: A self-hosted Docling-compatible worker may parse content; authoritative validation and any fraud/tamper decision remains server-side. Replayed jobs should reuse conclusive existing results where possible.
       responses:
-        '202': { description: Intelligence job queued }
+        '202': { description: Intelligence job queued or existing conclusive result reused }
   /api/v1/borrower/signatures/envelopes:
     post:
       summary: Create an API-isolated e-signature envelope
-      description: Supports a provider adapter such as Documenso or OpenSign without exposing provider credentials or making the frontend authoritative for signing status.
+      description: Supports a provider adapter such as Documenso or OpenSign without exposing provider credentials or making the frontend authoritative for signing status. Provider-side creation must be idempotent.
       responses:
         '202': { description: Envelope accepted by signing adapter }
   /api/v1/borrower/exports:
