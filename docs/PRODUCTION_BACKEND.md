@@ -12,7 +12,7 @@ PiHub has three business modules — **Borrower / Origination**, **Investor / Le
 ## Security principles
 1. Never place session tokens, provider tokens, client secrets, API keys or signed long-lived credentials in URLs/localStorage.
 2. Every API command re-checks organization membership, deal access and action permission server-side.
-3. Advisory/Investor roles do not grant blanket visibility. `application_access_grants` controls deal-level assignment/disclosure.
+3. Advisory/Investor roles do not grant blanket visibility. User and organization deal-access grants control assignment/disclosure.
 4. Finance-critical transitions use version checks + idempotency keys.
 5. State update, audit event and outbox event commit together.
 6. Browser users cannot approve draws, mark payments settled, decide covenants/KYB/KYC/AML, approve credit, fund facilities or alter immutable audit history.
@@ -20,7 +20,7 @@ PiHub has three business modules — **Borrower / Origination**, **Investor / Le
 8. External professional access is application-scoped, permission-limited, expiring and revocable.
 9. Disclosure consent is explicit, purpose-bound, auditable and revocable where legally/contractually permitted.
 10. AI/document-intelligence outputs are advisory evidence until an authorized PiHub workflow accepts them.
-11. Internal module coordination tables are server-only. Borrower, Investor, Advisory and Admin frontends receive authorized projections rather than direct access to coordination internals.
+11. Internal module coordination and internal decision/compliance tables are server-only. Borrower, Investor, Advisory and Admin frontends receive authorized projections rather than direct access to backend internals.
 
 ## Canonical records
 Core migration (`0001`): organizations/memberships/roles/access grants, applications/versions, documents/versions, requests/messages, terms, closing, facilities, payments, covenants, reporting, servicing, privacy, notifications, support, idempotency, audit and outbox.
@@ -82,6 +82,44 @@ The function is in the private schema, has a locked search path and is not execu
 
 ### Browser/security boundary
 The coordination tables have RLS enabled and browser privileges revoked. They intentionally have no browser RLS policy. Only trusted server/service-role code owns orchestration. The module APIs expose minimized, authorized projections instead of turning internal workflow tables into a public RPC surface.
+
+## Authorization helper correction
+Migration `0007_fix_private_authorization_helpers.sql` fixes a latent issue from the earlier helper-schema move. The authorization functions had been moved into `private`, but `private.can_read_application()` still referenced the removed `public.is_org_member`, `public.has_platform_role` and `public.has_application_access` names. The corrected helper chain uses fully qualified private helper calls and a locked empty search path.
+
+The production verification query now executes `private.can_read_application`, `private.has_platform_role` and `private.is_org_member` without resolution errors and returns false for an unauthenticated/nonexistent test subject, as expected.
+
+## Shared Investor / Advisory / Admin domain core
+Migrations `0008_platform_module_domain_core.sql` and `0009_platform_module_domain_fk_indexes.sql` add first-class module-specific records while preserving one canonical deal/application.
+
+### Organization capabilities and institution-level deal access
+`organization_capabilities` classifies organizations as borrower, investor, sponsor or service provider without overloading user/member roles.
+
+`application_organization_access_grants` lets an investor/advisory institution receive a deal once at organization level. `private.has_application_access()` now accepts either an explicit user grant or an active membership in an organization with an unexpired, non-revoked application grant. This avoids issuing one grant per employee and keeps disclosure revocable at institution level.
+
+### Shared transaction parties
+`deal_parties` attaches borrower, sponsor, investor/lender, adviser, servicer, agent, security trustee, valuer, legal and technical-adviser organizations to the same application ID. Advisory can therefore coordinate counterparties and Investor can inspect authorized parties without creating duplicate party/deal records.
+
+### Advisory mandate and due diligence
+`advisory_mandates` gives Advisory a first-class mandate record tied to the canonical application and client organization, including transaction type, commercial stage, owner, target amount and commercial terms.
+
+`due_diligence_workstreams` provides shared DD ownership/status/findings for Advisory, Investor and Admin. This is deliberately separate from documents: documents are evidence; workstreams are the review/decision process around that evidence.
+
+### Advisory → Investor publication
+`deal_publications` models the controlled act of publishing an approved version of a canonical deal to investors. Publications have version, status, disclosure level, teaser and investor criteria. Publication does not copy the application itself.
+
+### Investor commitments and decisions
+`investor_commitments` ties an investor organization to the canonical application/publication and tracks interest → DD → credit review → approval/decline → commitment → allocation → funding.
+
+`investor_decisions` records stage-specific screening, underwriting, credit/investment-committee and final outcomes. Internal rationale/conditions remain server-owned and must never be leaked into Borrower projections merely because they share a deal ID.
+
+### Admin / Compliance
+`compliance_cases` and `compliance_checks` provide explicit Admin control-plane records for KYB, KYC, AML, sanctions, UBO, PEP, source-of-funds and document review. They attach to the relevant organization/application/user while remaining server-only. Borrower should receive only safe consequences such as `action_required`, `under_review`, `cleared` or `blocked`, not internal compliance notes/provider payloads.
+
+### Module-domain security
+All new module-domain tables have RLS enabled and browser privileges revoked. They are intentionally API/service-owned until the central PiHub API exposes permission-minimized module projections. Supabase performance-advisor foreign-key findings are covered by indexes; unused-index notices on the empty/pre-production dataset are informational and are not grounds to remove relationship indexes prematurely.
+
+### Synthetic verification
+A temporary canonical application was used to create a Borrower party, Advisory mandate, Advisory DD workstream, Investor publication/commitment/decision, Admin compliance case and a two-target `investor + admin` domain event. The domain records inserted successfully. A separate post-statement verification confirmed two target deliveries, two module states and two projection revisions. All synthetic data was deleted afterward.
 
 ## API command model
 The browser may request a change; the server decides whether it is valid. The lowest-call production contract is one authenticated command request that commits the business change, audit/outbox evidence and returns an authoritative module snapshot or bounded canonical delta from that same transaction.
@@ -145,7 +183,8 @@ Do not enable API runtime until:
 - RLS + security/performance advisors are green for actionable warnings;
 - session/bootstrap/command/upload/connection/intelligence/signature/export/Copilot endpoints exist;
 - the command endpoint returns canonical state/delta or supports the documented coalesced reconciliation fallback;
-- module APIs enforce record/module permissions and never expose internal coordination tables directly;
+- module APIs enforce record/module permissions and never expose internal coordination or internal decision/compliance tables directly;
+- organization-level deal grants are issued/revoked only through authorized server/admin commands;
 - provider secrets are configured in the server secret store;
 - asynchronous provider callbacks/jobs are idempotent and auditable;
 - cross-module handoff/event-delivery tests prove one canonical record travels through the full lifecycle;
