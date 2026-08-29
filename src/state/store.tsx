@@ -112,13 +112,13 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
-  const reloadFromApi = useCallback(async () => {
+  const loadFromApi = useCallback(async (force: boolean) => {
     if (mode !== 'api' || auth.status !== 'authenticated') return;
     clearReconciliationTimer();
     setConnectionStatus('syncing');
     setConnectionError(undefined);
     try {
-      const snapshot = migrateState(await fetchBorrowerSnapshot({ force: true }));
+      const snapshot = migrateState(await fetchBorrowerSnapshot({ force }));
       setState(snapshot);
       setReady(true);
       setConnectionStatus('synced');
@@ -129,14 +129,16 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
     }
   }, [auth.status, clearReconciliationTimer, mode]);
 
+  const reloadFromApi = useCallback(() => loadFromApi(true), [loadFromApi]);
+
   const scheduleReconciliation = useCallback(() => {
     if (mode !== 'api' || auth.status !== 'authenticated') return;
     clearReconciliationTimer();
     reconcileTimerRef.current = window.setTimeout(() => {
       reconcileTimerRef.current = null;
-      void reloadFromApi();
+      void loadFromApi(true);
     }, COMMAND_RECONCILE_DELAY_MS);
-  }, [auth.status, clearReconciliationTimer, mode, reloadFromApi]);
+  }, [auth.status, clearReconciliationTimer, loadFromApi, mode]);
 
   const acceptCommandResult = useCallback((result: PlatformCommandResult) => {
     if (result.snapshot) {
@@ -150,12 +152,15 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
   }, [clearReconciliationTimer, scheduleReconciliation]);
 
   useEffect(() => {
-    if (mode === 'api' && auth.status === 'authenticated') void reloadFromApi();
+    // Initial authentication hydration may reuse a snapshot already returned by
+    // /session or /login. Explicit reloads and mutation reconciliation still force
+    // authoritative reads so request reduction never turns into stale finance state.
+    if (mode === 'api' && auth.status === 'authenticated') void loadFromApi(false);
     if (mode === 'api' && auth.status === 'unauthenticated') {
       clearReconciliationTimer();
       setReady(false);
     }
-  }, [auth.status, clearReconciliationTimer, mode, reloadFromApi]);
+  }, [auth.status, clearReconciliationTimer, loadFromApi, mode]);
 
   useEffect(() => () => clearReconciliationTimer(), [clearReconciliationTimer]);
 
