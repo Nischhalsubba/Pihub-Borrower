@@ -57,6 +57,8 @@ test('sidebar uses one canonical active-state contract and route semantics', () 
   assert.match(shellCss, /translateX\(3px\)/);
   assert.ok(shellCss.includes('left:-12px;top:11px;width:3px;height:22px'));
   assert.match(shellCss, /var\(--pihub-sidebar-raised\)/);
+  assert.match(shellCss, /\.pihub-sidebar-nav\{[^}]*align-content:start/);
+  assert.match(shellCss, /\.pihub-sidebar-nav \.nav-section\{[^}]*grid-auto-rows:max-content/);
 });
 
 test('sidebar information architecture is consolidated into eight borrower goals with contextual workflow navigation', () => {
