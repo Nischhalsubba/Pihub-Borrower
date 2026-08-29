@@ -11,6 +11,7 @@ export interface SessionUser {
 export interface SessionResult {
   authenticated: boolean;
   user?: SessionUser;
+  snapshot?: BorrowerState;
 }
 
 export class PlatformApiError extends Error {
@@ -123,12 +124,15 @@ async function request<T>(path: string, init: RequestInit = {}, options: ReadOpt
 
 export async function getSession(options: { force?: boolean } = {}): Promise<SessionResult> {
   if (!isApiRuntime()) return { authenticated: false };
-  return request<SessionResult>('/api/v1/session', {}, { cacheTtlMs: SESSION_CACHE_TTL_MS, force: options.force });
+  const result = await request<SessionResult>('/api/v1/session', {}, { cacheTtlMs: SESSION_CACHE_TTL_MS, force: options.force });
+  if (result.snapshot) primeBorrowerSnapshot(result.snapshot);
+  return result;
 }
 
 export async function signIn(email: string, password: string): Promise<SessionResult> {
   const result = await request<SessionResult>('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ email, password, module: 'borrower' }) });
   invalidatePlatformReadCache();
+  if (result.snapshot) primeBorrowerSnapshot(result.snapshot);
   return result;
 }
 
