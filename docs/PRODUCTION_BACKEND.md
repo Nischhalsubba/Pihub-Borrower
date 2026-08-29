@@ -1,4 +1,4 @@
-# PiHub Borrower v0.5 Production Backend Contract
+# PiHub Borrower v0.6.x Production Backend Contract
 
 ## Boundary
 The Borrower UI can demonstrate every borrower-owned workflow locally, but production truth lives in a shared PiHub backend. The backend owns identity, organization/deal authorization, canonical records, document storage, provider secrets, workflow orchestration, audit history, concurrency and cross-module delivery.
@@ -37,8 +37,28 @@ Advanced migration (`0002`):
 - integration connector metadata
 - complaints/disputes and export packages
 
+Security/performance hardening migrations move RLS authorization helpers into a private schema, optimize `auth.uid()` policy evaluation and index relationship foreign keys used by joins, cascades and authorization checks.
+
 ## API command model
-The browser may request a change; the server decides whether it is valid. In API runtime, advanced `feature` actions are not treated as authoritative optimistic state. The command is sent, then canonical state is reloaded/advanced using server versions.
+The browser may request a change; the server decides whether it is valid. The lowest-call production contract is one authenticated command request that commits the business change, audit/outbox evidence and returns an authoritative Borrower `snapshot` or bounded canonical delta from that same transaction.
+
+The client must not reload the entire bootstrap after every accepted command. If a legacy command response does not yet include canonical state, accepted command results are reconciled with one delayed bootstrap after the mutation burst. Rejected commands still trigger immediate authoritative recovery.
+
+Exact repeated commands are deduped client-side only for a conservative allowlist of idempotent/set-style operations. Non-idempotent actions such as creating support tickets, payment notices or other new records are never suppressed merely because their payloads look identical.
+
+## API request budget
+The production budget is defined in `docs/API_REQUEST_BUDGET.md` and is part of the architecture contract:
+
+- concurrent duplicate GETs share one in-flight request;
+- session and bootstrap reads use short in-memory TTLs only;
+- API-mode autosave has a 3-second minimum delay;
+- a mutation burst causes at most one delayed bootstrap reconciliation;
+- telemetry is transported in bounded batches rather than one request per UI event;
+- no background bootstrap polling is allowed;
+- provider calls happen server-to-server and must be idempotent/retry-safe;
+- database access behind the PiHub API should batch related records with joins/RPCs rather than N+1 request loops.
+
+This keeps request volume predictable without turning finance data into a stale browser cache.
 
 ## Provider integrations
 ### DATEV / finAPI / ERP
@@ -59,9 +79,11 @@ These remain optional backend integration candidates. Fineract can supply servic
 ## Production readiness gates
 Do not enable API runtime until:
 - migrations are reviewed/applied in the shared backend;
-- RLS + security/performance advisors are green;
+- RLS + security/performance advisors are green for actionable warnings;
 - session/bootstrap/command/upload/connection/intelligence/signature/export/Copilot endpoints exist;
+- the command endpoint returns canonical state/delta or supports the documented coalesced reconciliation fallback;
 - provider secrets are configured in the server secret store;
 - asynchronous provider callbacks/jobs are idempotent and auditable;
+- request-budget regression tests pass;
 - real browser/Axe/responsive tests pass on the exact release revision;
 - Vercel serves that exact verified commit.

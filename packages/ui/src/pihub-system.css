@@ -26,6 +26,7 @@
   --pihub-text: #101a2e;
   --pihub-text-secondary: #536078;
   --pihub-text-muted: #5b687d;
+  --pihub-text-eyebrow: #45556d;
   --pihub-border: #dce4ef;
   --pihub-border-soft: #e8edf4;
   --pihub-primary: #2457e6;
@@ -73,6 +74,7 @@ body{color:var(--pihub-text);background:var(--pihub-workspace);font-family:'IBM 
 .card-head{gap:var(--pihub-space-4);margin-bottom:var(--pihub-space-4)}
 .page-head{gap:var(--pihub-space-5)}
 .page-head h1{color:var(--pihub-text)}
+.eyebrow{color:var(--pihub-text-eyebrow)}
 .page-head p,.card-head p{color:var(--pihub-text-secondary)}
 .route-stage{max-width:var(--pihub-content-max);gap:var(--pihub-section-gap)}
 .kpi-grid,.dashboard-grid{gap:var(--pihub-grid-gap)}

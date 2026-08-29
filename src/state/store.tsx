@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Application, BorrowerDocument, BorrowerState, PrivacyRequest, ServicingRequest, SupportTicket, TeamMember } from './model';
 import type { BorrowerFeatureAction } from './advancedModel';
 import { applyAdvancedAction, workflowReadiness } from './advanced';
@@ -35,11 +35,12 @@ import {
 } from './core';
 import { deleteDocumentBlob, getDocumentBlob, putDocumentBlob } from './indexedDb';
 import { useAuth } from '../auth/AuthContext';
-import { createDocumentUploadIntent, fetchBorrowerSnapshot, sendBorrowerCommand } from '../services/platformApi';
+import { createDocumentUploadIntent, fetchBorrowerSnapshot, sendBorrowerCommand, type PlatformCommandResult } from '../services/platformApi';
 import { runtimeMode } from '../services/runtime';
 
 const STORAGE_KEY = 'pihub.borrower.v5';
 const LEGACY_STORAGE_KEYS = ['pihub.borrower.v4', 'pihub.borrower.v3', 'pihub.borrower.v2'];
+const COMMAND_RECONCILE_DELAY_MS = 4_000;
 
 function loadState(): BorrowerState {
   if (runtimeMode() === 'api') return createInitialState();
@@ -102,13 +103,22 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
   const [ready, setReady] = useState(mode === 'demo');
   const [connectionStatus, setConnectionStatus] = useState<'demo' | 'syncing' | 'synced' | 'error'>(mode === 'demo' ? 'demo' : 'syncing');
   const [connectionError, setConnectionError] = useState<string>();
+  const reconcileTimerRef = useRef<number | null>(null);
 
-  const reloadFromApi = useCallback(async () => {
+  const clearReconciliationTimer = useCallback(() => {
+    if (reconcileTimerRef.current !== null) {
+      window.clearTimeout(reconcileTimerRef.current);
+      reconcileTimerRef.current = null;
+    }
+  }, []);
+
+  const loadFromApi = useCallback(async (force: boolean) => {
     if (mode !== 'api' || auth.status !== 'authenticated') return;
+    clearReconciliationTimer();
     setConnectionStatus('syncing');
     setConnectionError(undefined);
     try {
-      const snapshot = migrateState(await fetchBorrowerSnapshot());
+      const snapshot = migrateState(await fetchBorrowerSnapshot({ force }));
       setState(snapshot);
       setReady(true);
       setConnectionStatus('synced');
@@ -117,35 +127,63 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
       setConnectionStatus('error');
       setConnectionError(error instanceof Error ? error.message : 'Unable to load Borrower data from PiHub.');
     }
-  }, [auth.status, mode]);
+  }, [auth.status, clearReconciliationTimer, mode]);
+
+  const reloadFromApi = useCallback(() => loadFromApi(true), [loadFromApi]);
+
+  const scheduleReconciliation = useCallback(() => {
+    if (mode !== 'api' || auth.status !== 'authenticated') return;
+    clearReconciliationTimer();
+    reconcileTimerRef.current = window.setTimeout(() => {
+      reconcileTimerRef.current = null;
+      void loadFromApi(true);
+    }, COMMAND_RECONCILE_DELAY_MS);
+  }, [auth.status, clearReconciliationTimer, loadFromApi, mode]);
+
+  const acceptCommandResult = useCallback((result: PlatformCommandResult) => {
+    if (result.snapshot) {
+      clearReconciliationTimer();
+      setState(migrateState(result.snapshot));
+      setReady(true);
+      setConnectionStatus('synced');
+      return;
+    }
+    scheduleReconciliation();
+  }, [clearReconciliationTimer, scheduleReconciliation]);
 
   useEffect(() => {
-    if (mode === 'api' && auth.status === 'authenticated') void reloadFromApi();
-    if (mode === 'api' && auth.status === 'unauthenticated') setReady(false);
-  }, [auth.status, mode, reloadFromApi]);
+    // Initial authentication hydration may reuse a snapshot already returned by
+    // /session or /login. Explicit reloads and mutation reconciliation still force
+    // authoritative reads so request reduction never turns into stale finance state.
+    if (mode === 'api' && auth.status === 'authenticated') void loadFromApi(false);
+    if (mode === 'api' && auth.status === 'unauthenticated') {
+      clearReconciliationTimer();
+      setReady(false);
+    }
+  }, [auth.status, clearReconciliationTimer, loadFromApi, mode]);
+
+  useEffect(() => () => clearReconciliationTimer(), [clearReconciliationTimer]);
 
   useEffect(() => {
     if (mode === 'demo') localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     document.documentElement.lang = state.locale;
   }, [mode, state]);
 
-
-
   const update = useCallback((fn: (current: BorrowerState) => BorrowerState) => setState((current) => fn(current)), []);
   const dispatchCommand = useCallback((command: string, payload: Record<string, unknown>, aggregateId?: string) => {
     if (mode !== 'api' || auth.status !== 'authenticated') return;
     setConnectionStatus('syncing');
     setConnectionError(undefined);
-    void sendBorrowerCommand({ idempotencyKey: crypto.randomUUID(), command, aggregateId, payload }).then(async () => {
-      await reloadFromApi();
+    void sendBorrowerCommand({ idempotencyKey: crypto.randomUUID(), command, aggregateId, payload }).then((result) => {
+      acceptCommandResult(result);
     }).catch(async (error) => {
       const message = error instanceof Error ? error.message : 'PiHub command failed.';
-      // Restore authoritative data without hiding the rejected-command feedback.
-      try { setState(migrateState(await fetchBorrowerSnapshot())); } catch { /* keep current recovery path */ }
+      clearReconciliationTimer();
+      try { setState(migrateState(await fetchBorrowerSnapshot({ force: true }))); } catch { /* keep current recovery path */ }
       setConnectionStatus('error');
       setConnectionError(message);
     });
-  }, [auth.status, mode, reloadFromApi]);
+  }, [acceptCommandResult, auth.status, clearReconciliationTimer, mode]);
   const app = activeApplication(state);
   const completion = completionPercentage(app, state.documents);
   const saveLabel = useMemo(() => {
@@ -178,12 +216,13 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
     uploadDocument: async (file, category, replaceId) => {
       if (mode === 'api') {
         setConnectionStatus('syncing');
+        setConnectionError(undefined);
         const applicationId = state.activeApplicationId;
         const intent = await createDocumentUploadIntent({ applicationId, name: file.name, contentType: file.type || 'application/octet-stream', size: file.size, category });
         const upload = await fetch(intent.uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream', ...(intent.headers ?? {}) } });
         if (!upload.ok) throw new Error(`Secure document upload failed (${upload.status}).`);
-        await sendBorrowerCommand({ idempotencyKey: crypto.randomUUID(), command: 'document.upload.finalize', aggregateId: intent.documentId, payload: { applicationId, versionId: intent.versionId, replaceId: replaceId ?? null, category } });
-        await reloadFromApi();
+        const result = await sendBorrowerCommand({ idempotencyKey: crypto.randomUUID(), command: 'document.upload.finalize', aggregateId: intent.documentId, payload: { applicationId, versionId: intent.versionId, replaceId: replaceId ?? null, category } });
+        acceptCommandResult(result);
         return;
       }
       const key = `blob:${replaceId ?? crypto.randomUUID()}`;
@@ -201,8 +240,10 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
     },
     removeDocument: async (documentId) => {
       if (mode === 'api') {
-        await sendBorrowerCommand({ idempotencyKey: crypto.randomUUID(), command: 'document.remove', aggregateId: documentId, payload: {} });
-        await reloadFromApi();
+        setConnectionStatus('syncing');
+        setConnectionError(undefined);
+        const result = await sendBorrowerCommand({ idempotencyKey: crypto.randomUUID(), command: 'document.remove', aggregateId: documentId, payload: {} });
+        acceptCommandResult(result);
         return;
       }
       const doc = state.documents.find((item) => item.id === documentId);
