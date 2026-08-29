@@ -17,8 +17,12 @@ Deno.serve(async (request) => {
   if (!url || !serviceRole || !scannerUrl || !scannerToken) return json({ error: 'service_not_configured' }, 503);
   const supabase = createClient(url, serviceRole, { auth: { persistSession: false } });
 
-  const { data: version, error } = await supabase.from('document_versions').select('id,object_path').eq('id', versionId).single();
+  const { data: version, error } = await supabase.from('document_versions').select('id,object_path,malware_status,sha256').eq('id', versionId).single();
   if (error || !version) return json({ error: 'document_version_not_found' }, 404);
+  if (version.malware_status === 'clean' || version.malware_status === 'blocked') {
+    return json({ versionId, status: version.malware_status, sha256: version.sha256 ?? undefined, cached: true });
+  }
+
   const { data: signed, error: signedError } = await supabase.storage.from('pihub-documents').createSignedUrl(version.object_path, 300);
   if (signedError || !signed?.signedUrl) return json({ error: 'signed_url_failed' }, 500);
 
@@ -28,7 +32,7 @@ Deno.serve(async (request) => {
     const result = await scan.json() as { clean?: boolean; sha256?: string };
     const status = result.clean ? 'clean' : 'blocked';
     await supabase.from('document_versions').update({ malware_status: status, sha256: result.sha256 ?? null }).eq('id', versionId);
-    return json({ versionId, status });
+    return json({ versionId, status, sha256: result.sha256 ?? undefined, cached: false });
   } catch {
     await supabase.from('document_versions').update({ malware_status: 'failed' }).eq('id', versionId);
     return json({ error: 'scan_failed' }, 502);
