@@ -15,6 +15,15 @@ test('GET requests are coalesced and short-lived caches prevent duplicate startu
   assert.match(api, /invalidatePlatformReadCache/);
 });
 
+test('session and login may hydrate Borrower state in the same request', () => {
+  const api = read('src/services/platformApi.ts');
+  const doc = read('docs/API_REQUEST_BUDGET.md');
+  assert.match(api, /interface SessionResult[\s\S]*snapshot\?: BorrowerState/);
+  assert.match(api, /getSession[\s\S]*if \(result\.snapshot\) primeBorrowerSnapshot\(result\.snapshot\)/);
+  assert.match(api, /signIn[\s\S]*if \(result\.snapshot\) primeBorrowerSnapshot\(result\.snapshot\)/);
+  assert.match(doc, /Existing authenticated app load \| 1 request when session includes snapshot/);
+});
+
 test('safe duplicate commands are suppressed without deduping non-idempotent actions', () => {
   const api = read('src/services/platformApi.ts');
   assert.match(api, /COMMAND_DEDUPE_TTL_MS = 5_000/);
