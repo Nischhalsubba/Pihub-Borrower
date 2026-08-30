@@ -51,8 +51,8 @@ test('PiHub spacing uses one semantic scale for page, section, grid and card geo
 
 test('sidebar uses one canonical active-state contract and route semantics', () => {
   assert.match(shell, /ap-nav-item/);
-  assert.match(shell, /section\.routes\.some\(\(route\) => routeMatches\(location\.pathname, route\)\)/);
-  assert.match(shell, /aria-current=\{isActive \? 'page' : undefined\}/);
+  assert.match(shell, /section\.routes\.some\(\s*\(?route\)?\s*=>\s*routeMatches\(location\.pathname,\s*route\)\s*\)/);
+  assert.match(shell, /aria-current=\{isActive\s*\?\s*'page'\s*:\s*undefined\}/);
   assert.doesNotMatch(shell, /sidebar-context/);
   assert.match(shellCss, /translateX\(3px\)/);
   assert.ok(shellCss.includes('left:-12px;top:11px;width:3px;height:22px'));
@@ -62,8 +62,10 @@ test('sidebar uses one canonical active-state contract and route semantics', () 
 });
 
 test('sidebar information architecture is consolidated into eight borrower goals with contextual workflow navigation', () => {
-  for (const key of ['overview', 'financingWorkspace', 'applicationsWorkspace', 'executionWorkspace', 'servicingWorkspace', 'organizationWorkspace', 'copilot', 'help']) assert.ok(shell.includes(`key: '${key}'`), `Missing primary borrower goal: ${key}`);
-  assert.match(shell, /const primaryNav: readonly PrimaryNavItem\[\] = \[/);
+  for (const key of ['overview', 'financingWorkspace', 'applicationsWorkspace', 'executionWorkspace', 'servicingWorkspace', 'organizationWorkspace', 'copilot', 'help']) {
+    assert.match(shell, new RegExp(`key\\s*:\\s*['"]${key}['"]`), `Missing primary borrower goal: ${key}`);
+  }
+  assert.match(shell, /const\s+primaryNav\s*:\s*readonly\s+PrimaryNavItem\[\]\s*=\s*\[/);
   assert.match(shell, /workspace-context-nav/);
   assert.match(shell, /sectionNavigationHint/);
   assert.match(shellCss, /\.workspace-context-shell/);
