@@ -1,4 +1,4 @@
-const ONBOARDING_VERSION = 'v1';
+const ONBOARDING_VERSION = 'v2';
 const ONBOARDING_PREFIX = `pihub.borrower.onboarding.${ONBOARDING_VERSION}`;
 
 function onboardingStorageKey(userId?: string): string {
