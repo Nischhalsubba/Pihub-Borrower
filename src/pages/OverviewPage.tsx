@@ -1,16 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { ApplicationChecklist } from '../components/ApplicationChecklist';
 import { Card, PageHead, Progress, Status, euro } from '../components/UI';
 import { Icon } from '../components/Icons';
-import { hasCompletedBorrowerOnboarding, markBorrowerOnboardingComplete } from '../onboarding';
 import { usePlatformIntegration } from '../platform/PlatformIntegrationContext';
 import { moduleDisplayName, type PlatformWorkflowState } from '../platform/types';
 import { useBorrowerStore } from '../state/store';
 import { facilityHealth, nextFacilityPayment } from '../state/core';
 import { workflowReadiness } from '../state/advanced';
-import { OnboardingPage } from './OnboardingPage';
 
 const statusLabel: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', pihub_review: 'PiHub review', information_required: 'Information required', structuring: 'Structuring', due_diligence: 'Due diligence', investor_review: 'Investor review', indicative_terms: 'Indicative terms', terms_accepted: 'Terms accepted', documentation: 'Documentation', conditions_precedent: 'Conditions precedent', ready_to_fund: 'Ready to fund', funded: 'Funded', declined: 'Declined', withdrawn: 'Withdrawn', archived: 'Archived'
@@ -33,24 +30,8 @@ function moduleTone(state: PlatformWorkflowState): 'neutral' | 'info' | 'warning
 }
 
 export function OverviewPage() {
-  const auth = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
   const { state, app, mode, completion, submitApplication } = useBorrowerStore();
   const { projection, status: integrationStatus } = usePlatformIntegration();
-  const replayOnboarding = new URLSearchParams(location.search).get('tour') === '1';
-  const [showOnboarding, setShowOnboarding] = useState(() => replayOnboarding || !hasCompletedBorrowerOnboarding(auth.user?.id));
-
-  useEffect(() => {
-    if (replayOnboarding) setShowOnboarding(true);
-  }, [replayOnboarding]);
-
-  const completeOnboarding = () => {
-    markBorrowerOnboardingComplete(auth.user?.id);
-    setShowOnboarding(false);
-    if (replayOnboarding) navigate('/', { replace: true });
-  };
-
   const openRequests = state.requests.filter((request) => request.applicationId === app.id && ['open', 'overdue'].includes(request.status));
   const acceptedDocs = state.documents.filter((document) => document.applicationId === app.id && document.status === 'accepted').length;
   const workflow = workflowReadiness(state, app.id);
@@ -59,8 +40,6 @@ export function OverviewPage() {
   const nextRequest = openRequests[0];
   const sharedWork = projection?.workItems.filter((item) => ['open', 'in_progress', 'blocked'].includes(item.status)) ?? [];
   const nextSharedWork = sharedWork[0];
-
-  if (showOnboarding) return <OnboardingPage onComplete={completeOnboarding}/>;
 
   if (app.status === 'funded') {
     const facility = state.facilities.find((item) => item.applicationId === app.id);
