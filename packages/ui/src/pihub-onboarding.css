@@ -1,5 +1,5 @@
-/* PiHub Borrower onboarding and overview readability layer.
-   The canonical shell remains untouched; these rules are intentionally scoped. */
+/* PiHub Borrower guided-tour and overview readability layer.
+   The tour is an overlay on the real workspace, never a separate onboarding page. */
 
 /* Overview timeline typography: the right-hand workflow card must remain readable at normal zoom. */
 .overview-timeline-card .card-head h2 {
@@ -64,419 +64,253 @@
   color: #53637a;
 }
 
-/* First-login guided onboarding. */
-.onboarding-stage {
-  max-width: var(--pihub-content-max);
-  gap: 24px;
+/* Spotlight product tour. */
+.product-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 2400;
+  pointer-events: none;
 }
 
-.onboarding-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 28px;
-  padding: 8px 0 2px;
+.product-tour-mask {
+  position: fixed;
+  z-index: 2400;
+  background: rgb(8 16 30 / .66);
+  backdrop-filter: blur(1.5px);
+  pointer-events: auto;
 }
 
-.onboarding-welcome {
-  max-width: 920px;
+.product-tour-mask-full {
+  inset: 0;
 }
 
-.onboarding-welcome h1 {
-  margin: 4px 0 10px;
-  font-size: clamp(32px, 3.2vw, 46px);
-  line-height: 1.04;
-  letter-spacing: -.045em;
-  color: #121c2e;
+.product-tour-spotlight {
+  position: fixed;
+  z-index: 2401;
+  border: 2px solid #7ea2ff;
+  border-radius: 14px;
+  box-shadow: 0 0 0 4px rgb(59 100 246 / .16), 0 16px 44px rgb(2 8 23 / .24);
+  pointer-events: none;
+  transition: top .2s ease, left .2s ease, width .2s ease, height .2s ease;
 }
 
-.onboarding-welcome p {
-  max-width: 900px;
-  margin: 0;
-  color: #58677d;
-  font-size: 13.5px;
-  line-height: 1.7;
-}
-
-.onboarding-welcome p strong {
-  color: #25334a;
-}
-
-.onboarding-layout {
+.product-tour-card {
+  position: fixed;
+  z-index: 2402;
   display: grid;
-  grid-template-columns: minmax(250px, .34fr) minmax(0, 1fr);
-  gap: 18px;
-  align-items: stretch;
-}
-
-.onboarding-sidebar,
-.onboarding-panel {
-  min-width: 0;
+  gap: 14px;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid #d8e2f0;
   border-radius: 16px;
+  background: #fff;
+  color: #152033;
+  box-shadow: 0 24px 70px rgb(2 8 23 / .30);
+  pointer-events: auto;
+  outline: none;
 }
 
-.onboarding-sidebar {
+.product-tour-card:focus-visible {
+  box-shadow: 0 24px 70px rgb(2 8 23 / .30), 0 0 0 3px rgb(59 100 246 / .24);
+}
+
+.product-tour-card-head {
   display: grid;
-  align-content: start;
-  gap: 18px;
-  padding: 20px;
-  background: #0f192b;
-  color: #e7edf7;
-  box-shadow: 0 16px 40px rgb(15 23 42 / .10);
-}
-
-.onboarding-context-card {
-  display: grid;
-  gap: 5px;
-  padding: 15px;
-  border: 1px solid #2a3851;
-  border-radius: 12px;
-  background: #131f34;
-}
-
-.onboarding-context-card span,
-.onboarding-progress-copy span {
-  color: #91a3bf;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.onboarding-context-card strong {
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.onboarding-context-card small {
-  color: #a9b8ce;
-  font-size: 10.5px;
-  line-height: 1.45;
-}
-
-.onboarding-progress-copy {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.onboarding-progress-copy strong {
-  font-size: 11px;
-}
-
-.onboarding-progress {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #24334d;
-}
-
-.onboarding-progress span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: #6f95ff;
-  transition: width .22s ease;
-}
-
-.onboarding-step-list {
-  display: grid;
-  gap: 6px;
-}
-
-.onboarding-step-list button {
-  width: 100%;
-  min-height: 46px;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr) 28px;
   gap: 10px;
   align-items: center;
-  padding: 7px 9px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: #b6c3d7;
-  text-align: left;
 }
 
-.onboarding-step-list button:hover {
-  background: #17253c;
-  color: #fff;
-}
-
-.onboarding-step-list button.active {
-  border-color: #365182;
-  background: #1a2b49;
-  color: #fff;
-}
-
-.onboarding-step-list button > span {
-  width: 28px;
-  height: 28px;
+.product-tour-icon {
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid #42516b;
-  border-radius: 999px;
-  background: #111d31;
-  font-size: 10px;
-  font-weight: 700;
+  border-radius: 11px;
+  background: #edf3ff;
+  color: #285de9;
 }
 
-.onboarding-step-list button.active > span {
-  border-color: #6f95ff;
-  background: #2457e6;
-}
-
-.onboarding-step-list button strong {
+.product-tour-card-head > div {
   min-width: 0;
-  font-size: 11.5px;
-  line-height: 1.35;
-}
-
-.onboarding-panel {
   display: grid;
-  align-content: start;
-  gap: 20px;
-  min-height: 610px;
-  padding: clamp(24px, 3vw, 38px);
-  border: 1px solid #dbe3ee;
-  background: #fff;
-  box-shadow: 0 16px 40px rgb(15 23 42 / .06);
+  gap: 2px;
 }
 
-.onboarding-step-hero {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.onboarding-step-icon {
-  width: 50px;
-  height: 50px;
-  flex: 0 0 50px;
-  display: grid;
-  place-items: center;
-  border-radius: 13px;
-  background: #eef4ff;
-  color: #2457e6;
-}
-
-.onboarding-step-hero > div {
-  min-width: 0;
-}
-
-.onboarding-step-kicker {
-  display: block;
-  margin-bottom: 5px;
-  color: #526681;
+.product-tour-card-head > div > span {
+  color: #234fbf;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-.onboarding-panel h2 {
-  margin: 0;
-  max-width: 900px;
-  font-size: clamp(24px, 2.2vw, 32px);
-  line-height: 1.14;
-  letter-spacing: -.035em;
+.product-tour-card-head small {
+  color: #738198;
+  font-size: 10.5px;
+  line-height: 1.35;
 }
 
-.onboarding-step-body {
-  max-width: 940px;
-  margin: 0;
-  color: #4f6078;
-  font-size: 13.5px;
-  line-height: 1.72;
-}
-
-.onboarding-bullet-list {
+.product-tour-close {
+  width: 28px;
+  height: 28px;
   display: grid;
-  gap: 9px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #66758c;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.product-tour-close:hover {
+  background: #f1f5f9;
+  color: #1f2937;
+}
+
+.product-tour-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e7edf7;
+}
+
+.product-tour-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #315fe8;
+  transition: width .2s ease;
+}
+
+.product-tour-card h2 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.18;
+  letter-spacing: -.025em;
+  color: #111c2f;
+}
+
+.product-tour-body {
+  margin: 0;
+  color: #4d5e75;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.product-tour-points {
+  display: grid;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.onboarding-bullet-list li {
+.product-tour-points li {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
   align-items: start;
-  padding: 11px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 11px;
-  background: #fbfcfe;
+  padding: 9px 10px;
+  border: 1px solid #e3e9f1;
+  border-radius: 10px;
+  background: #f9fbfe;
+  color: #314158;
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 
-.onboarding-bullet-list li > span {
+.product-tour-points li svg {
+  margin-top: 2px;
+  color: #18784d;
+}
+
+.product-tour-module-flow {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid #dce5f1;
+  border-radius: 12px;
+  background: #f6f9fe;
+}
+
+.product-tour-module-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.product-tour-module-row > span {
   width: 26px;
   height: 26px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: #eaf8f1;
-  color: #16794a;
-}
-
-.onboarding-bullet-list p {
-  margin: 2px 0 0;
-  color: #33445b;
-  font-size: 12.5px;
-  line-height: 1.55;
-}
-
-.onboarding-locations {
-  display: grid;
-  gap: 9px;
-  padding: 14px;
-  border-radius: 12px;
-  background: #f5f8fd;
-}
-
-.onboarding-locations > span {
-  color: #586b85;
+  border-radius: 999px;
+  background: #e9f0ff;
+  color: #2959d9;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: .07em;
-  text-transform: uppercase;
 }
 
-.onboarding-locations > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+.product-tour-module-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
 }
 
-.onboarding-locations strong {
-  padding: 7px 9px;
-  border: 1px solid #dbe4f2;
-  border-radius: 8px;
-  background: #fff;
-  color: #30415a;
+.product-tour-module-row strong {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.product-tour-module-row small {
+  color: #6b7890;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+
+.product-tour-module-row em {
+  padding: 5px 7px;
+  border-radius: 999px;
+  background: #eef3fb;
+  color: #51627b;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.product-tour-actions {
+  display: grid;
+  grid-template-columns: auto minmax(70px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.product-tour-actions .button {
+  min-height: 36px;
+  font-size: 10.5px;
+}
+
+.product-tour-skip {
+  justify-self: center;
+  border: 0;
+  background: transparent;
+  color: #6c7a90;
   font-size: 10.5px;
   font-weight: 700;
 }
 
-.module-tour-block {
-  display: grid;
-  gap: 14px;
-}
-
-.module-flow-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.module-flow-card {
-  min-width: 0;
-  display: grid;
-  align-content: start;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid #dfe6f0;
-  border-radius: 12px;
-  background: #fff;
-}
-
-.module-flow-icon {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background: #edf3ff;
-  color: #2457e6;
-}
-
-.module-flow-title {
-  display: grid;
-  gap: 9px;
-}
-
-.module-flow-title > div {
-  display: grid;
-  gap: 2px;
-}
-
-.module-flow-title strong {
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.module-flow-title small {
-  color: #64748b;
-  font-size: 10px;
-}
-
-.module-flow-card p {
-  margin: 0;
-  color: #526177;
-  font-size: 11px;
-  line-height: 1.55;
-}
-
-.handoff-list {
-  display: grid;
-  border: 1px solid #dde5ef;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.handoff-list > div {
-  display: grid;
-  grid-template-columns: minmax(180px, .7fr) minmax(0, 1.3fr);
-  gap: 16px;
-  padding: 12px 14px;
-  border-bottom: 1px solid #e7ecf3;
-}
-
-.handoff-list > div:last-child {
-  border-bottom: 0;
-}
-
-.handoff-list strong {
-  font-size: 11.5px;
-  line-height: 1.45;
-}
-
-.handoff-list span {
-  color: #59697e;
-  font-size: 11px;
-  line-height: 1.55;
-}
-
-.onboarding-boundary-note {
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: 9px;
-  align-items: start;
-  margin: 0;
-  padding: 12px 13px;
-  border: 1px solid #f0d8a5;
-  border-radius: 11px;
-  background: #fffaf0;
-  color: #6d541f;
-  font-size: 11px;
-  line-height: 1.55;
-}
-
-.onboarding-footer {
-  display: grid;
-  grid-template-columns: auto minmax(80px, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  margin-top: auto;
-  padding-top: 4px;
-}
-
-.onboarding-footer > span {
-  color: #75839a;
-  font-size: 10.5px;
-  text-align: center;
+.product-tour-skip:hover {
+  color: #253650;
+  text-decoration: underline;
 }
 
 .help-tour-row {
@@ -493,40 +327,32 @@
   line-height: 1.55;
 }
 
-@media (max-width: 1180px) {
-  .module-flow-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .onboarding-header {
-    align-items: stretch;
-    flex-direction: column;
+@media (max-width: 760px) {
+  .product-tour-card {
+    max-height: min(70dvh, 620px);
+    border-radius: 14px;
+    padding: 15px;
   }
 
-  .onboarding-header > .button {
+  .product-tour-card h2 {
+    font-size: 19px;
+  }
+
+  .product-tour-body {
+    font-size: 12px;
+  }
+
+  .product-tour-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .product-tour-actions .button {
     width: 100%;
   }
 
-  .onboarding-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .onboarding-sidebar {
-    gap: 13px;
-  }
-
-  .onboarding-step-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .onboarding-step-list button {
-    grid-template-columns: 28px minmax(0, 1fr);
-  }
-
-  .onboarding-panel {
-    min-height: 0;
+  .product-tour-skip {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 }
 
@@ -537,47 +363,6 @@
 
   .overview-timeline-card .platform-timeline .stage-row > .status {
     grid-column: 2;
-  }
-
-  .onboarding-welcome h1 {
-    font-size: 30px;
-  }
-
-  .onboarding-welcome p,
-  .onboarding-step-body {
-    font-size: 12.5px;
-  }
-
-  .onboarding-step-list {
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    overscroll-behavior-inline: contain;
-  }
-
-  .onboarding-step-list button {
-    min-width: 150px;
-  }
-
-  .module-flow-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .handoff-list > div {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .onboarding-footer {
-    grid-template-columns: 1fr;
-  }
-
-  .onboarding-footer .button {
-    width: 100%;
-  }
-
-  .onboarding-footer > span {
-    order: -1;
   }
 
   .help-tour-row {
@@ -591,7 +376,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .onboarding-progress span {
+  .product-tour-spotlight,
+  .product-tour-progress span {
     transition: none;
   }
 }
