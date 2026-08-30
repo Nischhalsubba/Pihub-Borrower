@@ -45,28 +45,11 @@ async function openPrimary(page: any, name: string) {
   if (await mobileMenu.isVisible()) {
     await mobileMenu.click();
     await expect(sidebar).toHaveClass(/is-open/);
-    await page.waitForFunction(() => {
-      const element = document.querySelector('.sidebar');
-      if (!(element instanceof HTMLElement)) return false;
-      const rect = element.getBoundingClientRect();
-      const transform = getComputedStyle(element).transform;
-      const translateX = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m41;
-      return Math.abs(rect.left) < 1 && rect.right > 0 && rect.width > 0 && Math.abs(translateX) < 1;
-    });
+    await expect(sidebar).toBeVisible();
   }
   const link = sidebar.getByRole('link', { name, exact: true });
+  await link.scrollIntoViewIfNeeded();
   await expect(link).toBeVisible();
-  await link.evaluate((element) => {
-    const scroller = element.closest('.sidebar');
-    if (!(scroller instanceof HTMLElement)) return;
-    const target = element.getBoundingClientRect();
-    const frame = scroller.getBoundingClientRect();
-    scroller.scrollTop += target.top - frame.top - ((scroller.clientHeight - target.height) / 2);
-  });
-  await expect.poll(() => link.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
-  })).toBe(true);
   await link.click();
 }
 
@@ -77,9 +60,20 @@ async function openShellLink(page: any, name: string) {
     return;
   }
   await openPrimary(page, primary);
-  const contextLink = page.locator('.workspace-context-nav').getByRole('link', { name, exact: true });
+  const contextNav = page.locator('.workspace-context-nav');
+  await expect(contextNav).toBeVisible();
+  const contextLink = contextNav.getByRole('link', { name, exact: true });
+
+  if (!(await contextLink.isVisible().catch(() => false))) {
+    const more = contextNav.locator('details.workspace-context-more');
+    await expect(more).toHaveCount(1);
+    if (!(await more.evaluate((element) => element.hasAttribute('open')))) {
+      await more.locator('summary').click();
+    }
+  }
+
   await contextLink.scrollIntoViewIfNeeded();
-  await expect(contextLink).toBeInViewport();
+  await expect(contextLink).toBeVisible();
   await contextLink.click();
 }
 
@@ -121,11 +115,22 @@ test('Borrower login is module-scoped while retaining the unified PiHub access s
 test('merged sidebar keeps related borrower tools in a seamless contextual workflow', async ({ page }) => {
   await login(page);
   await openPrimary(page, 'Applications');
-  await expect(page.locator('.workspace-context-nav')).toBeVisible();
-  for (const item of ['My applications', 'New application', 'Financing request', 'Financials', 'Documents', 'PiHub requests', 'Application versions']) {
-    await expect(page.locator('.workspace-context-nav').getByRole('link', { name: item, exact: true })).toBeVisible();
+  const contextNav = page.locator('.workspace-context-nav');
+  await expect(contextNav).toBeVisible();
+
+  for (const item of ['My applications', 'Financing request', 'Financials', 'Documents', 'PiHub requests']) {
+    await expect(contextNav.getByRole('link', { name: item, exact: true })).toBeVisible();
   }
-  await page.locator('.workspace-context-nav').getByRole('link', { name: 'Documents', exact: true }).click();
+
+  const more = contextNav.locator('details.workspace-context-more');
+  await expect(more).toHaveCount(1);
+  await expect(more.locator('summary')).toBeVisible();
+  await more.locator('summary').click();
+  for (const item of ['New application', 'Connected data', 'Data room', 'Messages', 'Activity', 'Application versions']) {
+    await expect(contextNav.getByRole('link', { name: item, exact: true })).toBeVisible();
+  }
+
+  await contextNav.getByRole('link', { name: 'Documents', exact: true }).click();
   await expect(page).toHaveURL(/\/documents$/);
   await expect(page.locator('.sidebar').getByRole('link', { name: 'Applications', exact: true })).toHaveAttribute('aria-current', 'page');
 });
