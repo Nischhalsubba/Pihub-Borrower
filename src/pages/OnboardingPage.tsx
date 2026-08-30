@@ -45,13 +45,12 @@ function greetingForHour(hour: number): string {
 }
 
 function visibleTarget(selectors: string[]): HTMLElement | null {
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
   for (const selector of selectors) {
     const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
     const target = elements.find((element) => {
       const rect = element.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < viewportWidth && rect.top < viewportHeight;
+      const style = window.getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
     });
     if (target) return target;
   }
@@ -235,7 +234,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     }
 
     let cancelled = false;
-    let animationFrame = 0;
+    let locateTimer = 0;
+    let measureTimer = 0;
     let attempts = 0;
     let scrolled = false;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -250,27 +250,28 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
       const target = visibleTarget(step.selectors);
       if (!target) {
         attempts += 1;
-        if (attempts < 180) animationFrame = requestAnimationFrame(locate);
+        if (attempts < 60) locateTimer = window.setTimeout(locate, 50);
         return;
       }
       targetRef.current = target;
       if (!scrolled) {
         scrolled = true;
         target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' });
-        window.setTimeout(measure, reducedMotion ? 0 : 260);
+        measureTimer = window.setTimeout(measure, reducedMotion ? 0 : 260);
       } else {
         measure();
       }
     };
 
     const refresh = () => measure();
-    animationFrame = requestAnimationFrame(locate);
+    locateTimer = window.setTimeout(locate, 0);
     window.addEventListener('resize', refresh);
     window.addEventListener('scroll', refresh, true);
     return () => {
       cancelled = true;
       targetRef.current = null;
-      cancelAnimationFrame(animationFrame);
+      window.clearTimeout(locateTimer);
+      window.clearTimeout(measureTimer);
       window.removeEventListener('resize', refresh);
       window.removeEventListener('scroll', refresh, true);
     };
