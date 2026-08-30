@@ -34,15 +34,16 @@ test('browser workspace synchronization uses revisions and bounded patches', () 
 
 test('module consumers are deal scoped and domain consequences are automatic', () => {
   const access = read('supabase/migrations/0010_borrower_consumer_foundation.sql');
-  const sql = read('supabase/migrations/0013_roadmap_completion.sql');
+  const runtime = read('supabase/migrations/0013_roadmap_completion.sql');
+  const inbox = read('supabase/migrations/0014_deal_scoped_module_inbox.sql');
   assert.match(access, /application_access_grants/);
   assert.match(access, /application_organization_access_grants/);
-  assert.match(sql, /can_consume_module_event/);
-  assert.match(sql, /advisory\.due_diligence\.updated/);
-  assert.match(sql, /admin\.compliance\.updated/);
-  assert.match(sql, /investor\.commitment\.updated/);
-  assert.match(sql, /investor\.decision\.updated/);
-  assert.doesNotMatch(sql, /internal_summary.*safe_payload|evidence.*safe_payload|rationale.*safe_payload/);
+  assert.match(inbox, /can_consume_module_event/);
+  assert.match(runtime, /advisory\.due_diligence\.updated/);
+  assert.match(runtime, /admin\.compliance\.updated/);
+  assert.match(runtime, /investor\.commitment\.updated/);
+  assert.match(runtime, /investor\.decision\.updated/);
+  assert.doesNotMatch(runtime, /internal_summary.*safe_payload|evidence.*safe_payload|rationale.*safe_payload/);
 });
 
 test('long forms have progress, validation summary, dirty-state guard and sticky save state', () => {
