@@ -33,9 +33,10 @@ test('browser workspace synchronization uses revisions and bounded patches', () 
 });
 
 test('module consumers are deal scoped and domain consequences are automatic', () => {
+  const access = read('supabase/migrations/0010_borrower_consumer_foundation.sql');
   const sql = read('supabase/migrations/0013_roadmap_completion.sql');
-  assert.match(sql, /application_access_grants/);
-  assert.match(sql, /application_organization_access_grants/);
+  assert.match(access, /application_access_grants/);
+  assert.match(access, /application_organization_access_grants/);
   assert.match(sql, /can_consume_module_event/);
   assert.match(sql, /advisory\.due_diligence\.updated/);
   assert.match(sql, /admin\.compliance\.updated/);
