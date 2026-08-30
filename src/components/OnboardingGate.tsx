@@ -16,7 +16,7 @@ export function OnboardingGate() {
   const location = useLocation();
   const navigate = useNavigate();
   const replayRequested = new URLSearchParams(location.search).get('tour') === '1';
-  const automaticTourDisabled = import.meta.env.VITE_DISABLE_AUTO_TOUR === 'true';
+  const automaticTourDisabled = (import.meta.env as { VITE_DISABLE_AUTO_TOUR?: string }).VITE_DISABLE_AUTO_TOUR === 'true';
   const [open, setOpen] = useState(() => replayRequested || (!automaticTourDisabled && !hasCompletedBorrowerOnboarding(auth.user?.id)));
   const returnPathRef = useRef(withoutTourQuery(location.pathname, location.search));
   const previousReplayRef = useRef(replayRequested);
