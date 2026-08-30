@@ -6,11 +6,14 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
-test('first login opens a personalized spotlight tour over the real workspace and completion persists', async ({ page }) => {
+test('personalized spotlight tour runs over the real workspace, crosses routes and persists completion', async ({ page }) => {
   await page.getByRole('button', { name: 'Open Borrower' }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Financing overview' })).toBeVisible();
 
+  // The Playwright server suppresses automatic coachmarks so unrelated workflow tests stay isolated.
+  // Force the same production tour through its supported Help/replay query contract.
+  await page.goto('/?tour=1');
   const tour = page.getByLabel('PiHub guided tour');
   await expect(tour).toBeVisible();
   await expect(tour.locator('.product-tour-spotlight')).toBeVisible();
