@@ -17,16 +17,18 @@ export function OnboardingGate() {
   const navigate = useNavigate();
   const replayRequested = new URLSearchParams(location.search).get('tour') === '1';
   const [open, setOpen] = useState(() => replayRequested || !hasCompletedBorrowerOnboarding(auth.user?.id));
-  const returnPathRef = useRef<string | null>(null);
+  const returnPathRef = useRef(withoutTourQuery(location.pathname, location.search));
+  const previousReplayRef = useRef(replayRequested);
 
   useEffect(() => {
-    if (!open) return;
-    if (!returnPathRef.current) returnPathRef.current = withoutTourQuery(location.pathname, location.search);
-  }, [location.pathname, location.search, open]);
-
-  useEffect(() => {
-    if (replayRequested) setOpen(true);
-  }, [replayRequested]);
+    if (replayRequested && !previousReplayRef.current) {
+      returnPathRef.current = withoutTourQuery(location.pathname, location.search);
+      setOpen(true);
+    } else if (replayRequested) {
+      setOpen(true);
+    }
+    previousReplayRef.current = replayRequested;
+  }, [location.pathname, location.search, replayRequested]);
 
   if (!open) return null;
 
@@ -34,7 +36,6 @@ export function OnboardingGate() {
     markBorrowerOnboardingComplete(auth.user?.id);
     setOpen(false);
     const returnPath = returnPathRef.current || '/';
-    returnPathRef.current = null;
     const currentPath = withoutTourQuery(location.pathname, location.search);
     if (currentPath !== returnPath || replayRequested) navigate(returnPath, { replace: true });
   };
