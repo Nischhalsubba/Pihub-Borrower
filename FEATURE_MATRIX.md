@@ -1,53 +1,53 @@
-# PiHub Borrower v0.5 Functional Completeness Matrix
+# PiHub Borrower v0.6+ Functional & Platform Integration Matrix
 
-Status legend: **Implemented** means the Borrower reference artifact has a real route, state/action contract, visible outcome and tests. **Prepared production adapter** means the frontend/API/server boundary exists but live provider credentials/infrastructure are still required.
+Updated: 2026-08-30
 
-| Priority | Capability | v0.5 implementation | Production boundary |
+**Status meanings**
+- **Implemented**: real Borrower route/state/action with a visible outcome.
+- **Live shared-backend foundation**: the managed PiHub Supabase backend contains the canonical contract and it has been verified directly.
+- **Prepared production consumer**: the secure API/client contract exists, but the Borrower production runtime is intentionally not switched until the complete same-origin session/bootstrap/command service is ready.
+
+## Shared PiHub integration
+
+| Priority | Capability | Current state | Production boundary |
 |---|---|---|---|
-| P0 | Product-aware workflows | **Implemented**: construction, bridge, mezzanine, corporate and related product profiles change required sections, documents, milestones and submission blockers | Product/rule catalogue remains server-governed |
-| P0 | Construction Draw & Disbursement Center | **Implemented**: Sources & Uses, construction budget, line-item draws, funded-to-date, request history and cross-module events | Advisory/Investor approval and actual disbursement remain authoritative backend actions |
-| P0 | Inspection workflow | **Implemented**: request, schedule/status model, draw linkage, report/exception fields | Inspector assignment/report ingestion requires production workflow/provider integration |
-| P0 | Bank account connection | **Implemented + prepared adapter**: PSD2/finAPI connection intent, consent/sync/freshness/cash-flow surfaces | Live finAPI/PSD2 credentials, regulated consent and account APIs required |
-| P0 | DATEV connection | **Implemented + prepared adapter**: secure authorization-intent flow, fiscal/accounting scopes, sync/freshness model | DATEV developer access and organization authorization required |
-| P0 | Smart document intelligence | **Implemented + prepared OSS adapter**: bulk selection, classify/extract/review/warnings/duplicate/tamper-signal model; Docling server adapter source | Production scanner/extraction service must run server-side; output is evidence, not an automatic credit decision |
-| P0 | Explainable pre-qualification | **Implemented**: readiness band, reasons, blockers and next actions | Production thresholds/rules remain server-controlled and must avoid misleading credit promises |
-| P0 | Explainable matching | **Implemented**: product match score, fit reasons and gaps without exposing confidential lender policy | Provider availability and lender rules remain confidential server data |
-| P0 | Multi-deal / SPV portfolio | **Implemented**: applications/SPVs/facilities, search/filter/sort, saved views and CSV export | Canonical organization/deal data comes from shared API |
-| P0 | Disclosure & Consent Center | **Implemented**: deal/document disclosure grants, purpose, expiry and revoke workflow | Actual data disclosure requires server authorization, audit and recipient access grants |
-| P0 | Facility transaction requests | **Implemented**: increase, additional drawdown, rollover, extension, partial/full repayment, refinance, payment-account change and payoff requests | Advisory/Investor/servicing approval is authoritative |
-| P1 | Financing Scenario Lab | **Implemented**: amount, tenor, rates, fees, amortization, equity, LTV/LTC, DSCR, debt service, all-in cost and stress scenarios | Scenario output is non-binding and never edits authoritative terms |
-| P1 | Payment & Statement Center | **Implemented**: schedule, transaction/report-payment workflow, statements and CSV export | Bank/provider settlement state remains read-only to Borrower |
-| P1 | Auto-payment / payment instructions | **Implemented**: masked account/payment instructions, manual/SEPA modes and verification state | Actual SEPA mandate/payment initiation requires regulated payment infrastructure |
-| P1 | Covenant Forecasting | **Implemented**: current covenant context, forecast value, headroom, test date, assumptions and early-warning status | Forecast never becomes official covenant compliance without server/servicer confirmation |
-| P1 | Cash-flow monitoring after funding | **Implemented**: consent-scoped connection snapshots and freshness | Live monitoring depends on connected-account provider |
-| P1 | External professional access | **Implemented**: accountant/lawyer/tax adviser/architect/contractor/broker, application scope, permissions, expiry and revoke | Server RBAC/access grants must enforce every read/write |
-| P1 | Advanced Data Room | **Implemented**: folders, bulk upload, bulk intelligence analysis, document versions/status, manifest export | Production object storage, AV/malware scanning and signed download URLs required |
-| P1 | Reusable Company Vault | **Implemented**: reusable corporate document model, validity and application links | Server determines reuse eligibility/staleness |
-| P1 | Data freshness system | **Implemented**: source label, last update, fresh/stale/needs-confirmation and Borrower confirmation | Provider sync timestamps are server-authoritative |
-| P1 | Deadline & Calendar Center | **Implemented**: requests, documents, payments, covenants, reporting, inspections, closing, term expiry and maturity | Production deadlines derive from canonical workflow records |
-| P1 | Borrower Copilot | **Implemented**: deterministic demo assistant + **prepared self-hosted Ollama adapter** with server-only authorized/redacted context | AI cannot decide credit/compliance/legal/covenant/payment state; server retrieval/redaction required |
-| P1 | Offer impact comparison | **Implemented** through scenario lab and term comparison: pricing, fees, leverage, debt service and structural impact | Only issued term sheets are authoritative offers |
-| P1 | Negotiation workspace | **Implemented**: term-linked questions, counters, rationale and status history | PiHub/Advisory responses and lender decisions come from backend workflow |
-| P1 | E-signature package | **Implemented + prepared OSS adapter**: envelope/signers/status; Documenso v2 server adapter source | Live signing requires separately deployed/licensed provider, identity controls and webhook reconciliation |
-| P1 | ESG / Sustainability workspace | **Implemented**: EPC, energy standard, renewable share, CO2, taxonomy, KfW/certification fields | Evidence/verification remains PiHub/provider governed |
-| P2 | Custom portfolio views | **Implemented**: saved filters/sort/columns | Persist via shared API in production |
-| P2 | ERP / API integration hub | **Implemented**: connector catalogue/test workflow and server authorization-intent boundary | Live ERP/webhook/file connectors require enterprise configuration |
-| P2 | Bulk operations | **Implemented**: multi-file upload, bulk document intelligence, manifest/export operations | Large production batches should be asynchronous/server queued |
-| P2 | Loan payoff / maturity package | **Implemented**: payoff/refinance/extension request paths tied to facility | Official payoff figures and discharge status remain servicer-controlled |
-| P2 | Complaint / dispute center | **Implemented**: submit, reference/status/history model | Production SLA, immutable correspondence and compliance handling are server workflows |
-| P2 | Data export package | **Implemented**: local JSON/CSV/manifest controls plus governed server export-job API | Full ZIP/PDF/legal export generation occurs server-side |
+| P0 | One canonical deal across modules | **Live shared-backend foundation** | Borrower, Advisory, Investor and Admin must keep using the same application/deal IDs |
+| P0 | Module workflow state | **Live shared-backend foundation + Borrower UI**: Borrower overview consumes a permission-minimized module-state projection and renders the financing timeline | Central API/BFF adoption is required before production runtime cutover |
+| P0 | Cross-module handoffs | **Live shared-backend foundation**: durable source/target handoffs remain attached to the canonical application | Borrower projection exposes only Borrower-related handoff metadata, never private payload/notes |
+| P0 | Unified PiHub Request Center | **Implemented**: existing request conversations and authorized shared work items are presented in one Borrower inbox | Shared work items come from the central platform API in production |
+| P0 | Borrower-safe compliance readiness | **Implemented + live backend projection** | Only safe readiness state/count are exposed; internal compliance notes, evidence, risk and provider results remain private |
+| P0 | Organization approvals before submission | **Implemented + live backend contract**: finance, legal and signatory gates are role-enforced server-side and shown on Financing request | Final production submit command must re-check approvals in the central command service |
+| P0 | Event-driven Borrower work notifications | **Live shared-backend foundation**: new Borrower-targeted work items create notifications for active organization members | Delivery channel fan-out remains a server worker/provider concern |
+| P0 | Borrower-completable work-item policy | **Live shared-backend foundation**: only work items explicitly marked borrower-completable can be closed by the borrower | PiHub-validated evidence/review tasks cannot be self-completed |
+| P0 | Authenticated platform API foundation | **Live**: `platform-api` Edge Function is deployed with JWT verification, caller re-verification and service-role-only privileged RPC access | It is an internal API foundation, not yet the complete browser BFF/login/bootstrap/command service |
+| P1 | Reusable Company Vault | **Implemented + shared projection support** | Production reuse eligibility and validity remain server-authoritative |
+| P1 | Revision-aware module projection | **Live shared-backend foundation**: projection revision is returned with the authorized Borrower integration payload | Future BFF can use the revision for bounded delta/unchanged responses |
+| P1 | Automatic Advisory/Admin/Investor consequences | **Backend event/handoff foundation implemented** | Each module consumer still needs to adopt the central API/event contract end to end |
+| P1 | Post-funding continuity | **Implemented**: facility, payment, covenant, reporting, servicing and portfolio surfaces already remain tied to the same application | Settlement/compliance/servicer decisions remain authoritative backend actions |
 
-## Foundation retained from v0.4
-Borrower-only access, application lifecycle/versioning, financing/company/UBO/project/financial forms, autosave, documents, PiHub requests/messages, notifications, activity, terms, closing, organization/team, privacy requests, funded facility overview, servicing, payments, covenants, periodic reporting and canonical cross-module event/outbox contracts remain included.
+## Existing Borrower capability set retained
 
-## Open-source capability boundaries
-- **Docling / docling-serve**: document parsing/extraction worker behind PiHub authorization.
-- **Documenso**: API-isolated e-signature adapter; its licensing must be reviewed for the chosen deployment model.
-- **Ollama**: optional self-hosted Borrower Copilot inference behind server-side retrieval/redaction.
-- **Apache Fineract**: optional servicing/core-ledger integration candidate, never a browser dependency.
-- **Temporal**: optional durable orchestration candidate for long-running draws, inspections, closing, reporting and servicing workflows.
-- **OpenSign**: evaluated alternative e-sign provider; not exposed as a selectable provider until an adapter is implemented and licensed appropriately.
-- **FullCalendar, TanStack Table, Recharts, Papa Parse**: evaluated permissive frontend candidates; intentionally not added where the current dependency-free implementation is sufficient.
+| Area | Current implementation |
+|---|---|
+| Financing application | Financing/company/UBO/project/financial forms, autosave, product-aware workflow readiness, versions and withdrawal |
+| Product discovery | Product catalogue, pre-qualification, explainable matching and comparison |
+| Documents | Requirements, upload/version state, Advanced Data Room, bulk manifest/export and document intelligence review |
+| Connected data | DATEV/finAPI/ERP authorization-intent model, freshness and cash-flow snapshots |
+| Construction finance | Sources & Uses, construction budget, draw requests and inspections |
+| Terms & execution | Indicative terms, scenario lab, negotiation, e-sign envelope model, closing readiness and calendar |
+| Organization | Team/roles, external professionals, disclosure/consent, Company Vault, account and privacy rights |
+| Servicing | Facility overview, payment schedule/statements, reporting, covenants/forecasting, servicing requests and payoff/refinance paths |
+| Governance | Notifications, activity/audit-facing history, complaints/disputes, data exports and Borrower Copilot |
+| Localization/accessibility | EN/DE architecture, keyboard navigation, reduced motion, multi-browser/Axe release gate |
 
-## Important non-fakes
-Borrower cannot mark a bank payment settled, approve its own draw, determine covenant compliance, decide KYB/KYC/AML, approve lender credit, complete PiHub/legal closing work, fund a facility, or erase regulated records from the browser. Those actions are either read-only authoritative status or become explicit requests to the owning module/service.
+## Provider/adaptor boundaries
+- **Docling / docling-serve**: server-side document parsing/extraction only.
+- **Documenso**: server-side e-signature adapter; final signer state comes from provider reconciliation.
+- **Ollama**: optional self-hosted Borrower Copilot inference behind authorized/redacted context.
+- **finAPI / DATEV / ERP**: server-managed authorization and tokens; no provider credentials in browser storage.
+- **Apache Fineract / Temporal**: optional future servicing/orchestration components, not browser dependencies.
+
+## Non-negotiable production boundary
+The current production Borrower frontend remains on its verified runtime until the central same-origin PiHub session/bootstrap/command service covers the full application command set. The new shared projection and Edge API do **not** justify placing bearer/refresh tokens in localStorage or enabling a partial API runtime that would break existing workflows.
+
+Borrower cannot mark a bank payment settled, approve its own draw, determine official covenant compliance, decide KYB/KYC/AML, approve lender credit, complete PiHub/legal work, fund a facility or erase regulated records from the browser. Those remain owned by the authorized backend/module workflow.

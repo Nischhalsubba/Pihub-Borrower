@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test:core": "rm -rf .core-build && tsc -p tsconfig.core.json && node --test tests/core.test.mjs",
-    "test:static": "node --test tests/static-audit.test.mjs tests/design-system.test.mjs tests/api-budget.test.mjs",
+    "test:static": "node --test tests/static-audit.test.mjs tests/design-system.test.mjs tests/api-budget.test.mjs tests/platform-integration.test.mjs",
     "test": "npm run typecheck && npm run test:core && npm run test:static",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "test:e2e": "playwright test"
