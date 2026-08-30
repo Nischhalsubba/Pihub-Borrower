@@ -5,6 +5,7 @@ import {
   fetchBorrowerIntegrationProjection,
   setBorrowerPlatformApproval
 } from '../services/platformApi';
+import { reuseBorrowerVaultItem } from '../services/platformVaultApi';
 import type { ApplicationStatus, BorrowerState, ModuleId } from '../state/model';
 import { useBorrowerStore } from '../state/store';
 import type {
@@ -23,26 +24,15 @@ interface PlatformIntegrationApi {
   refresh: () => Promise<void>;
   completeWorkItem: (workItemId: string) => Promise<void>;
   setApproval: (type: ApprovalGateType, decision: Exclude<ApprovalGateStatus, 'pending'>, note?: string) => Promise<void>;
+  reuseVaultItem: (vaultItemId: string) => Promise<void>;
 }
 
 const PlatformIntegrationContext = createContext<PlatformIntegrationApi | null>(null);
 const APP_STAGE: Record<ApplicationStatus, number> = {
-  draft: 0,
-  submitted: 1,
-  pihub_review: 1,
-  information_required: 1,
-  structuring: 2,
-  due_diligence: 2,
-  investor_review: 3,
-  indicative_terms: 4,
-  terms_accepted: 4,
-  documentation: 4,
-  conditions_precedent: 5,
-  ready_to_fund: 5,
-  funded: 6,
-  declined: -1,
-  withdrawn: -1,
-  archived: -1
+  draft: 0, submitted: 1, pihub_review: 1, information_required: 1, structuring: 2,
+  due_diligence: 2, investor_review: 3, indicative_terms: 4, terms_accepted: 4,
+  documentation: 4, conditions_precedent: 5, ready_to_fund: 5, funded: 6,
+  declined: -1, withdrawn: -1, archived: -1
 };
 
 function stateFor(module: ModuleId, appStatus: ApplicationStatus, compliance: PlatformWorkflowState): PlatformWorkflowState {
@@ -127,7 +117,8 @@ function buildDemoProjection(state: BorrowerState, applicationId: string): Borro
       label: item.label,
       category: item.category,
       validUntil: item.validUntil ?? null,
-      reusable: item.reusable
+      reusable: item.reusable,
+      linkedToApplication: state.documents.some((document) => document.id === item.documentId && document.applicationId === app.id)
     }))
   };
 }
@@ -151,6 +142,11 @@ function loadDemoProjection(state: BorrowerState, applicationId: string): Borrow
       const persisted = persistedWork.get(item.id);
       return persisted ? { ...item, status: persisted.status, updatedAt: persisted.updatedAt } : item;
     });
+    const persistedVault = new Map((parsed.vaultItems ?? []).map((item) => [item.id, item]));
+    const vaultItems = fallback.vaultItems.map((item) => ({
+      ...item,
+      linkedToApplication: item.linkedToApplication || Boolean(persistedVault.get(item.id)?.linkedToApplication)
+    }));
     const submissionReady = (['finance', 'legal', 'signatory'] as ApprovalGateType[])
       .every((gate) => approvals.some((item) => item.type === gate && item.status === 'approved'));
 
@@ -159,7 +155,8 @@ function loadDemoProjection(state: BorrowerState, applicationId: string): Borrow
       projectionRevision: Math.max(fallback.projectionRevision, parsed.projectionRevision ?? 0),
       approvals,
       submissionReady,
-      workItems
+      workItems,
+      vaultItems
     };
   } catch {
     return fallback;
@@ -203,24 +200,16 @@ export function PlatformIntegrationProvider({ children }: { children: React.Reac
 
   useEffect(() => {
     if (store.mode !== 'demo' || !projection) return;
-    try {
-      localStorage.setItem(demoStorageKey(app.id, app.createdAt), JSON.stringify(projection));
-    } catch { /* demo persistence is best-effort */ }
+    try { localStorage.setItem(demoStorageKey(app.id, app.createdAt), JSON.stringify(projection)); }
+    catch { /* demo persistence is best-effort */ }
   }, [app.createdAt, app.id, projection, store.mode]);
 
   const completeWorkItem = useCallback(async (workItemId: string) => {
     if (!projection) return;
-    setWorkingId(workItemId);
-    setError(undefined);
+    setWorkingId(workItemId); setError(undefined);
     try {
       if (store.mode === 'demo') {
-        setProjection((current) => current ? {
-          ...current,
-          projectionRevision: current.projectionRevision + 1,
-          workItems: current.workItems.map((item) => item.id === workItemId
-            ? { ...item, status: 'done', updatedAt: new Date().toISOString() }
-            : item)
-        } : current);
+        setProjection((current) => current ? { ...current, projectionRevision: current.projectionRevision + 1, workItems: current.workItems.map((item) => item.id === workItemId ? { ...item, status: 'done', updatedAt: new Date().toISOString() } : item) } : current);
       } else {
         await completeBorrowerPlatformWorkItem(workItemId);
         setProjection(await fetchBorrowerIntegrationProjection(app.id, { force: true }));
@@ -228,15 +217,12 @@ export function PlatformIntegrationProvider({ children }: { children: React.Reac
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to complete this PiHub work item.');
       throw reason;
-    } finally {
-      setWorkingId(undefined);
-    }
+    } finally { setWorkingId(undefined); }
   }, [app.id, projection, store.mode]);
 
   const setApproval = useCallback(async (type: ApprovalGateType, decision: Exclude<ApprovalGateStatus, 'pending'>, note = '') => {
     if (!projection) return;
-    setWorkingId(`approval:${type}`);
-    setError(undefined);
+    setWorkingId(`approval:${type}`); setError(undefined);
     try {
       if (store.mode === 'demo') {
         setProjection((current) => {
@@ -245,12 +231,7 @@ export function PlatformIntegrationProvider({ children }: { children: React.Reac
           const approvals = current.approvals.some((item) => item.type === type)
             ? current.approvals.map((item) => item.type === type ? { ...item, status: decision, decidedAt: now, updatedAt: now } : item)
             : [...current.approvals, { type, status: decision, decidedAt: now, updatedAt: now }];
-          return {
-            ...current,
-            projectionRevision: current.projectionRevision + 1,
-            approvals,
-            submissionReady: (['finance', 'legal', 'signatory'] as ApprovalGateType[]).every((gate) => approvals.some((item) => item.type === gate && item.status === 'approved'))
-          };
+          return { ...current, projectionRevision: current.projectionRevision + 1, approvals, submissionReady: (['finance', 'legal', 'signatory'] as ApprovalGateType[]).every((gate) => approvals.some((item) => item.type === gate && item.status === 'approved')) };
         });
       } else {
         await setBorrowerPlatformApproval(app.id, type, decision, note);
@@ -259,21 +240,30 @@ export function PlatformIntegrationProvider({ children }: { children: React.Reac
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to update this organization approval.');
       throw reason;
-    } finally {
-      setWorkingId(undefined);
-    }
+    } finally { setWorkingId(undefined); }
   }, [app.id, projection, store.mode]);
 
-  const value = useMemo<PlatformIntegrationApi>(() => ({
-    projection,
-    status,
-    error,
-    workingId,
-    refresh,
-    completeWorkItem,
-    setApproval
-  }), [completeWorkItem, error, projection, refresh, setApproval, status, workingId]);
+  const reuseVaultItem = useCallback(async (vaultItemId: string) => {
+    if (!projection) return;
+    setWorkingId(`vault:${vaultItemId}`); setError(undefined);
+    try {
+      if (store.mode === 'demo') {
+        setProjection((current) => current ? {
+          ...current,
+          projectionRevision: current.projectionRevision + 1,
+          vaultItems: current.vaultItems.map((item) => item.id === vaultItemId ? { ...item, linkedToApplication: true } : item)
+        } : current);
+      } else {
+        await reuseBorrowerVaultItem(app.id, vaultItemId);
+        setProjection(await fetchBorrowerIntegrationProjection(app.id, { force: true }));
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to reuse this Company Vault document.');
+      throw reason;
+    } finally { setWorkingId(undefined); }
+  }, [app.id, projection, store.mode]);
 
+  const value = useMemo<PlatformIntegrationApi>(() => ({ projection, status, error, workingId, refresh, completeWorkItem, setApproval, reuseVaultItem }), [completeWorkItem, error, projection, refresh, reuseVaultItem, setApproval, status, workingId]);
   return <PlatformIntegrationContext.Provider value={value}>{children}</PlatformIntegrationContext.Provider>;
 }
 
