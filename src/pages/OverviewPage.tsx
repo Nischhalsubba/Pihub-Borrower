@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ApplicationChecklist } from '../components/ApplicationChecklist';
 import { Card, PageHead, Progress, Status, euro } from '../components/UI';
 import { Icon } from '../components/Icons';
+import { usePlatformIntegration } from '../platform/PlatformIntegrationContext';
+import { moduleDisplayName, type PlatformWorkflowState } from '../platform/types';
 import { useBorrowerStore } from '../state/store';
 import { facilityHealth, nextFacilityPayment } from '../state/core';
 import { workflowReadiness } from '../state/advanced';
@@ -11,13 +13,33 @@ const statusLabel: Record<string, string> = {
   draft: 'Draft', submitted: 'Submitted', pihub_review: 'PiHub review', information_required: 'Information required', structuring: 'Structuring', due_diligence: 'Due diligence', investor_review: 'Investor review', indicative_terms: 'Indicative terms', terms_accepted: 'Terms accepted', documentation: 'Documentation', conditions_precedent: 'Conditions precedent', ready_to_fund: 'Ready to fund', funded: 'Funded', declined: 'Declined', withdrawn: 'Withdrawn', archived: 'Archived'
 };
 
+const moduleStateLabel: Record<PlatformWorkflowState, string> = {
+  not_started: 'Not started',
+  ready: 'Ready',
+  in_progress: 'In progress',
+  blocked: 'Action needed',
+  completed: 'Completed',
+  closed: 'Closed'
+};
+
+function moduleTone(state: PlatformWorkflowState): 'neutral' | 'info' | 'warning' | 'success' {
+  if (state === 'completed') return 'success';
+  if (state === 'in_progress' || state === 'ready') return 'info';
+  if (state === 'blocked') return 'warning';
+  return 'neutral';
+}
+
 export function OverviewPage() {
   const { state, app, mode, completion, submitApplication } = useBorrowerStore();
-  const openRequests = state.requests.filter((r) => r.applicationId === app.id && ['open', 'overdue'].includes(r.status));
-  const acceptedDocs = state.documents.filter((d) => d.applicationId === app.id && d.status === 'accepted').length;
+  const { projection, status: integrationStatus } = usePlatformIntegration();
+  const openRequests = state.requests.filter((request) => request.applicationId === app.id && ['open', 'overdue'].includes(request.status));
+  const acceptedDocs = state.documents.filter((document) => document.applicationId === app.id && document.status === 'accepted').length;
   const workflow = workflowReadiness(state, app.id);
-  const canSubmit = completion === 100 && workflow.ready && app.status === 'draft';
+  const organizationReady = projection?.submissionReady ?? false;
+  const canSubmit = completion === 100 && workflow.ready && organizationReady && app.status === 'draft';
   const nextRequest = openRequests[0];
+  const sharedWork = projection?.workItems.filter((item) => ['open', 'in_progress', 'blocked'].includes(item.status)) ?? [];
+  const nextSharedWork = sharedWork[0];
 
   if (app.status === 'funded') {
     const facility = state.facilities.find((item) => item.applicationId === app.id);
@@ -42,39 +64,45 @@ export function OverviewPage() {
     </div>;
   }
 
+  const priority = nextSharedWork
+    ? {
+        title: nextSharedWork.title,
+        detail: nextSharedWork.dueAt ? `Due ${new Date(nextSharedWork.dueAt).toLocaleDateString()} · ${moduleDisplayName(nextSharedWork.sourceModule)}` : `From ${moduleDisplayName(nextSharedWork.sourceModule)}`,
+        href: nextSharedWork.actionHref || '/requests',
+        action: 'Open request'
+      }
+    : nextRequest
+      ? { title: nextRequest.title, detail: `Due ${nextRequest.dueDate ?? 'soon'}`, href: '/requests', action: 'Open request' }
+      : canSubmit
+        ? { title: 'Application is ready to submit', detail: 'Core, product-specific and organization approval requirements are complete.', href: '/application', action: 'Review application' }
+        : !organizationReady && completion === 100 && workflow.ready
+          ? { title: 'Complete organization approvals', detail: 'Finance, legal and signatory approval gates are required before submission.', href: '/application', action: 'Review approvals' }
+          : { title: 'Complete the remaining application requirements', detail: workflow.blockers[0] ?? `${completion}% core complete`, href: '/application', action: 'Continue' };
+
   return <div className="route-stage">
     <PageHead eyebrow="Borrower / Financing overview" title="Financing overview" subtitle="One clear view of what PiHub has, what still blocks review and what happens next." action={<Link className="button primary" to="/application">Continue application</Link>} />
     <div className="demo-banner"><Icon name="warning" size={16}/><span><strong>{mode === 'api' ? 'PiHub connected.' : 'Demo workspace.'}</strong> {mode === 'api' ? 'This view is loaded from the canonical Borrower platform projection.' : 'Data persists in this browser. Cross-module consequences are represented by canonical demo events.'}</span></div>
     <div className="context-chips"><Status tone="info">Borrower owner</Status><Status>Application {app.id}</Status><Status tone={state.organization.verificationStatus === 'verified' ? 'success' : 'warning'}>Organization {state.organization.verificationStatus.replace('_', ' ')}</Status></div>
 
-    <section className="priority-strip">
-      <div className="priority-copy"><span className="priority-icon"><Icon name={nextRequest ? 'warning' : 'check'} size={18}/></span><span><strong>{nextRequest ? nextRequest.title : canSubmit ? 'Application is ready to submit' : 'Complete the remaining application requirements'}</strong><small>{nextRequest ? `Due ${nextRequest.dueDate ?? 'soon'}` : canSubmit ? 'Core and product-specific requirements are complete.' : workflow.blockers[0] ?? `${completion}% core complete`}</small></span></div>
-      {nextRequest ? <Link className="button" to="/requests">Open request</Link> : canSubmit ? <button className="button primary" onClick={submitApplication}>Submit application</button> : <Link className="button" to="/application">Continue</Link>}
-    </section>
+    <section className="priority-strip"><div className="priority-copy"><span className="priority-icon"><Icon name={nextSharedWork || nextRequest ? 'warning' : canSubmit ? 'check' : 'activity'} size={18}/></span><span><strong>{priority.title}</strong><small>{priority.detail}</small></span></div>{canSubmit && !nextSharedWork && !nextRequest ? <button className="button primary" onClick={submitApplication}>Submit application</button> : <Link className="button" to={priority.href}>{priority.action}</Link>}</section>
 
     <div className="kpi-grid">
       <Card><div className="kpi"><span>Core application</span><strong>{completion}%</strong><Progress value={completion}/></div></Card>
-      <Card><div className="kpi"><span>Open PiHub requests</span><strong>{openRequests.length}</strong><small>{openRequests.length ? 'Your response required' : 'Nothing outstanding'}</small></div></Card>
-      <Card><div className="kpi"><span>Documents accepted</span><strong>{acceptedDocs}</strong><small>{state.documents.filter((d) => d.applicationId === app.id).length} tracked</small></div></Card>
+      <Card><div className="kpi"><span>Open PiHub requests</span><strong>{openRequests.length + sharedWork.length}</strong><small>{openRequests.length + sharedWork.length ? 'Your response or action may be required' : 'Nothing outstanding'}</small></div></Card>
+      <Card><div className="kpi"><span>Documents accepted</span><strong>{acceptedDocs}</strong><small>{state.documents.filter((document) => document.applicationId === app.id).length} tracked</small></div></Card>
       <Card><div className="kpi"><span>Requested financing</span><strong>{euro(app.financing.amount)}</strong><small>{app.financing.structure}</small></div></Card>
     </div>
 
     <div className="dashboard-grid">
       <Card title="Application checklist" subtitle="Required sections and the exact next action."><ApplicationChecklist/></Card>
-      <Card title="Application progress" subtitle="Borrower-facing lifecycle status." action={<Status tone="info">{statusLabel[app.status]}</Status>}>
-        <div className="stage-list">
-          {['Application', 'PiHub review', 'Structuring', 'Terms', 'Closing'].map((label, index) => {
-            const stageIndex = app.status === 'draft' ? 0 : ['submitted','pihub_review','information_required'].includes(app.status) ? 1 : ['structuring','due_diligence','investor_review'].includes(app.status) ? 2 : ['indicative_terms','terms_accepted'].includes(app.status) ? 3 : 4;
-            const complete = index < stageIndex;
-            const active = index === stageIndex;
-            return <div key={label} className={`stage-row ${complete ? 'complete' : ''} ${active ? 'active' : ''}`}><span className="stage-dot">{complete ? <Icon name="check" size={12}/> : index + 1}</span><span><strong>{label}</strong><small>{complete ? 'Completed' : active ? 'Current stage' : 'Upcoming'}</small></span>{active && <Status tone="info">Current</Status>}</div>;
-          })}
-        </div>
+      <Card title="PiHub financing timeline" subtitle="One canonical application coordinated across Borrower, Advisory, Admin/Compliance and Investor." action={<Status tone="info">{statusLabel[app.status]}</Status>}>
+        {integrationStatus === 'error' && <div className="platform-warning" role="status">Shared module status is temporarily unavailable. Your Borrower application remains available.</div>}
+        <div className="stage-list platform-timeline">{(projection?.moduleStates ?? []).map((item, index) => <div key={item.module} className={`stage-row ${item.state === 'completed' ? 'complete' : ''} ${['in_progress','ready','blocked'].includes(item.state) ? 'active' : ''}`}><span className="stage-dot">{item.state === 'completed' ? <Icon name="check" size={12}/> : index + 1}</span><span><strong>{moduleDisplayName(item.module)}</strong><small>{item.module === 'borrower' ? 'Application and borrower responses' : item.module === 'advisory' ? 'Structuring and due diligence' : item.module === 'admin' ? 'Compliance and platform controls' : 'Opportunity review and commitment'}</small></span><Status tone={moduleTone(item.state)}>{moduleStateLabel[item.state]}</Status></div>)}</div>
+        {!projection && integrationStatus !== 'error' && <p className="platform-note">Shared PiHub workflow status is loading.</p>}
+        {projection && <p className="platform-note">Only borrower-safe workflow state is shown here. Internal Advisory, Investor and Compliance notes remain private.</p>}
       </Card>
     </div>
 
-    <Card title="Deal summary" subtitle="The borrower-facing transaction record shared by canonical ID.">
-      <div className="deal-band"><div><small>Project</small><strong>{app.project.name}</strong></div><div><small>Structure</small><strong>{app.financing.structure}</strong></div><div><small>Current owner</small><strong>{state.profile.name}</strong></div><div><small>Next PiHub review</small><strong>28 Aug 2026</strong></div></div>
-    </Card>
+    <Card title="Deal summary" subtitle="The borrower-facing transaction record shared by canonical ID."><div className="deal-band"><div><small>Project</small><strong>{app.project.name}</strong></div><div><small>Structure</small><strong>{app.financing.structure}</strong></div><div><small>Current owner</small><strong>{state.profile.name}</strong></div><div><small>Application</small><strong>{app.id}</strong></div></div></Card>
   </div>;
 }

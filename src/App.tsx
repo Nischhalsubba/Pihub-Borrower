@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { BorrowerStoreProvider, useBorrowerStore } from './state/store';
+import { PlatformIntegrationProvider } from './platform/PlatformIntegrationContext';
 import { Shell } from './components/Shell';
 import { ProductRouteMotion } from './components/ProductRouteMotion';
 import { LoginPage } from './pages/LoginPage';
@@ -95,8 +96,8 @@ function ProtectedApp() {
 }
 
 export default function App() {
-  return <BrowserRouter><AuthProvider><BorrowerStoreProvider><Routes>
+  return <BrowserRouter><AuthProvider><BorrowerStoreProvider><PlatformIntegrationProvider><Routes>
     <Route path="/login" element={<LoginPage/>}/>
     <Route path="/*" element={<ProtectedApp/>}/>
-  </Routes></BorrowerStoreProvider></AuthProvider></BrowserRouter>;
+  </Routes></PlatformIntegrationProvider></BorrowerStoreProvider></AuthProvider></BrowserRouter>;
 }

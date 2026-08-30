@@ -1,74 +1,84 @@
-# PiHub Borrower v0.5 Validation Record
+# PiHub Borrower Validation Record
 
-Generated: 2026-08-28
+Updated: 2026-08-30
 
-## Executed and passed
+## Last production-verified baseline
 
-```text
-TypeScript local source harness: PASS
-Strict state/domain TypeScript compile: PASS
-Domain/business transition tests: 38 / 38 PASS
-Static UI/security/architecture guards: 25 / 25 PASS
-Total executed business/static checks: 63 / 63 PASS
-E2E TypeScript specification compile: PASS
-```
+Borrower `main` was verified at `e1856eaef8a42487639581287164cd5708efa375` (PR #12).
 
-## Domain/business coverage
-The 38 domain tests cover both the v0.4 foundation and v0.5 expansion, including:
-- canonical application create/select/update/version/recovery/submit/withdraw
-- cross-module application/document/request/terms events
-- document and request workflows
-- funded facility activation, servicing, payment reconciliation, reporting and privacy requests
-- product-aware prequalification/matching
-- financing-structure-specific submission readiness
-- construction Sources & Uses, budget/draw and inspection lifecycle
-- connected data, freshness and document intelligence review
-- disclosure/consent grant/revoke
-- scenario calculations and non-authoritative stress testing
-- negotiation and e-signature boundaries
-- payment instruction verification and covenant forecast separation
-- external professional deal scope/expiry/revoke
-- calendar aggregation
-- complaints, exports and Borrower Copilot outcomes
-- schema migration through v5
+- GitHub Actions run `33260396285`: **PASS**
+- dependency installation: **PASS**
+- TypeScript/unit/static checks: **PASS**
+- production Vite build: **PASS**
+- Chromium: **PASS**
+- Firefox: **PASS**
+- WebKit: **PASS**
+- mobile workflow coverage: **PASS**
+- Axe serious/critical accessibility gate: **PASS**
+- Vercel exact-commit deployment: **PASS**
 
-## Static/security/architecture coverage
-The 25 static guards reject or verify:
-- blocking `window.alert()` placeholders
-- dead `href="#"` controls
-- TODO/FIXME residue
-- cross-module login routes
-- skip-link layout regression
-- monospace eligibility prose
-- undersized operational controls
-- fake localStorage cross-module synchronization
-- canonical business-state persistence in localStorage during API runtime
-- browser-stored auth/session tokens
-- decorative Three.js/GSAP/WebGL machinery in finance workflows
-- missing React route lazy loading
-- blanket Advisory/Investor read access
-- missing v0.5 Borrower routes
-- page-local fake state for advanced finance workflows
-- finance-critical browser write policies
-- browser provider tokens/secrets
-- core-only submission checks that ignore product-specific readiness
-- direct browser OAuth/DATEV/PSD2 credentials
-- missing bulk document/export controls
-- Docling/Documenso server-secret leakage
-- direct browser Ollama/provider access; production Copilot must go through PiHub API/server-grounded context
+## 2026-08-30 shared-platform consumer verification
 
-## Included but not executed in this isolated runtime
-A direct `npm run build` attempt could not resolve React/Vite packages because dependencies are not installed in this isolated artifact. A follow-up `npm install --no-audit --no-fund --ignore-scripts` attempt timed out. Therefore these remain mandatory release gates:
-1. dependency-backed `npm ci` / `npm run build` using the repository lockfile;
-2. Chromium Playwright workflows;
-3. Firefox Playwright workflows;
-4. WebKit Playwright workflows;
-5. mobile/responsive/overflow execution at 375, 768, 1024, 1440 and large desktop widths;
-6. real Axe serious/critical scan;
-7. real bundle/Core Web Vitals review;
-8. exact merged-revision Vercel verification;
-9. live database migration + RLS/security/performance advisor checks;
-10. provider sandbox/integration tests for DATEV, finAPI, Docling, Documenso, Ollama and any selected servicing/workflow provider.
+The managed PiHub Platform Supabase project was extended and verified before the frontend integration branch was opened.
 
-## Delivery boundary
-The GitHub connector was unavailable during this implementation. This validation applies to the standalone v0.5 artifact only; no GitHub branch, PR, merge or Vercel deployment is claimed.
+### Database changes applied
+- `application_approvals` for finance/legal/signatory/submission gates.
+- service-role-only session/module context projection.
+- service-role-only Borrower integration projection.
+- service-role-only work-item completion RPC.
+- service-role-only approval RPC.
+- event-driven Borrower notifications for new Borrower-targeted work items.
+- explicit `borrowerCompletable` policy so evidence/review tasks cannot be self-completed.
+
+### Direct live-database verification
+A synthetic transaction created a temporary auth user, organization membership, application, per-module states, compliance case and Borrower work item, then rolled the entire test data set back.
+
+Verified outcomes:
+- session context returned only the caller's authorized module set;
+- Borrower projection returned module states, safe work items, safe compliance readiness, approvals and projection revision;
+- internal compliance summary/evidence and module-private summary payloads did **not** appear in the projection;
+- a Borrower-targeted work item generated an event-driven notification;
+- role-authorized approval generated a canonical outbox event;
+- borrower-completable work-item completion generated a return event to the source module;
+- non-completable work items are rejected by the server policy;
+- temporary test data was rolled back.
+
+### Supabase advisors
+- Security advisor: no actionable WARN/ERROR findings from this work. Remaining RLS-with-no-policy entries are intentional INFO notices for server-owned tables whose browser privileges are revoked.
+- Performance advisor: no new unindexed-foreign-key finding from this work. Unused-index entries are informational on the currently empty production data set.
+
+### Edge API
+`platform-api` is deployed as an ACTIVE Supabase Edge Function with `verify_jwt=true`.
+
+The function:
+1. requires a caller JWT;
+2. re-verifies the caller with Supabase Auth;
+3. uses the verified user ID when invoking service-role-only privileged RPCs;
+4. fails CORS closed unless the browser origin is explicitly configured;
+5. never returns service-role credentials or raw coordination/compliance tables;
+6. exposes only session context, safe Borrower integration projection, authorized approval updates and explicitly borrower-completable work-item completion.
+
+## Current integration branch release gate
+
+The `feat/platform-consumer-foundation` branch adds:
+- shared PiHub financing timeline on Overview;
+- unified PiHub Request Center;
+- borrower-safe compliance readiness;
+- finance/legal/signatory approval gates on Financing request;
+- Company Vault consumption of the shared platform projection;
+- typed client contract for the integration projection and mutations;
+- source-controlled Supabase migration and `platform-api` function.
+
+Before this branch can merge, the normal mandatory release gate remains unchanged:
+1. deterministic `npm ci`;
+2. TypeScript + unit/static tests;
+3. production build;
+4. Chromium/Firefox/WebKit + mobile workflows;
+5. Axe accessibility sweep;
+6. exact-head Vercel status;
+7. merge only when green;
+8. post-merge exact-SHA GitHub Actions and Vercel verification.
+
+## Production cutover boundary
+
+The shared backend/API foundation is real, but Borrower production runtime is **not** switched to API mode yet. The remaining P0 is the complete same-origin server-session/bootstrap/command layer for the full Borrower command surface. Partial cutover is rejected because it would make some workflows canonical and others browser-local, which is worse than having one clearly labeled demo runtime.

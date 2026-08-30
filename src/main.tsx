@@ -6,6 +6,7 @@ import '../packages/ui/src/pihub-system.css';
 import '../packages/ui/src/pihub-shell.css';
 import '../packages/ui/src/pihub-auth.css';
 import '../packages/ui/src/pihub-motion.css';
+import './platform/platform-integration.css';
 import { initMonitoring } from './services/monitoring';
 
 initMonitoring();

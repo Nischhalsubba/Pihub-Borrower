@@ -1,4 +1,5 @@
 import type { BorrowerState, IntegrationEvent } from '../state/model';
+import type { ApprovalGateStatus, ApprovalGateType, BorrowerPlatformProjection } from '../platform/types';
 import { apiBaseUrl, isApiRuntime } from './runtime';
 
 export interface SessionUser {
@@ -26,6 +27,7 @@ type ReadCacheEntry = { expiresAt: number; value: unknown };
 
 const SESSION_CACHE_TTL_MS = 20_000;
 const BOOTSTRAP_CACHE_TTL_MS = 5_000;
+const PLATFORM_PROJECTION_CACHE_TTL_MS = 5_000;
 const COMMAND_DEDUPE_TTL_MS = 5_000;
 const readCache = new Map<string, ReadCacheEntry>();
 const inflightReads = new Map<string, Promise<unknown>>();
@@ -148,6 +150,31 @@ export async function requestPasswordReset(email: string): Promise<void> {
 
 export async function fetchBorrowerSnapshot(options: { force?: boolean } = {}): Promise<BorrowerState> {
   return request<BorrowerState>('/api/v1/borrower/bootstrap', {}, { cacheTtlMs: BOOTSTRAP_CACHE_TTL_MS, force: options.force });
+}
+
+export async function fetchBorrowerIntegrationProjection(applicationId: string, options: { force?: boolean } = {}): Promise<BorrowerPlatformProjection> {
+  const path = `/api/v1/borrower/integration?applicationId=${encodeURIComponent(applicationId)}`;
+  return request<BorrowerPlatformProjection>(path, {}, { cacheTtlMs: PLATFORM_PROJECTION_CACHE_TTL_MS, force: options.force });
+}
+
+export async function completeBorrowerPlatformWorkItem(workItemId: string): Promise<{ id: string; status: 'done'; eventId?: string }> {
+  const result = await request<{ id: string; status: 'done'; eventId?: string }>(`/api/v1/borrower/work-items/${encodeURIComponent(workItemId)}/complete`, { method: 'POST' });
+  invalidatePlatformReadCache();
+  return result;
+}
+
+export async function setBorrowerPlatformApproval(
+  applicationId: string,
+  type: ApprovalGateType,
+  decision: Exclude<ApprovalGateStatus, 'pending'>,
+  note = ''
+): Promise<{ id: string; type: ApprovalGateType; status: ApprovalGateStatus; eventId?: string }> {
+  const result = await request<{ id: string; type: ApprovalGateType; status: ApprovalGateStatus; eventId?: string }>('/api/v1/borrower/approvals', {
+    method: 'POST',
+    body: JSON.stringify({ applicationId, type, decision, note })
+  });
+  invalidatePlatformReadCache();
+  return result;
 }
 
 export interface PlatformCommand {
