@@ -5,6 +5,7 @@ import { BorrowerStoreProvider, useBorrowerStore } from './state/store';
 import { PlatformIntegrationProvider } from './platform/PlatformIntegrationContext';
 import { Shell } from './components/Shell';
 import { ProductRouteMotion } from './components/ProductRouteMotion';
+import { OnboardingGate } from './components/OnboardingGate';
 import { LoginPage } from './pages/LoginPage';
 
 const OverviewPage = lazy(() => import('./pages/OverviewPage').then((m) => ({ default: m.OverviewPage })));
@@ -92,7 +93,7 @@ function ProtectedApp() {
     <Route path="/copilot" element={<CopilotPage/>}/>
     <Route path="/help" element={<HelpPage/>}/>
     <Route path="*" element={<Navigate to="/" replace/>}/>
-  </Routes></ProductRouteMotion></Suspense></Shell>;
+  </Routes></ProductRouteMotion></Suspense><OnboardingGate/></Shell>;
 }
 
 export default function App() {
