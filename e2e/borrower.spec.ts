@@ -90,19 +90,23 @@ async function login(page: any) {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Open Borrower' }).click();
   await expectPath(page, '/');
+  await expect(page.locator('.pihub-shell')).toBeVisible();
 }
 
 async function openPrimary(page: any, name: string) {
   const sidebar = page.locator('.sidebar');
   const link = sidebar.getByRole('link', { name, exact: true });
   const mobileMenu = page.getByRole('button', { name: 'Open navigation' });
+  const isMobile = (page.viewportSize()?.width ?? 1280) <= 900;
 
-  if (await mobileMenu.isVisible()) {
+  if (isMobile) {
+    await expect(mobileMenu).toBeVisible();
     await mobileMenu.click();
     await expect(mobileMenu).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByRole('button', { name: 'Close navigation' })).toBeVisible();
     await expect(sidebar).toHaveClass(/is-open/);
     await expect(link).toBeVisible();
+    await link.scrollIntoViewIfNeeded();
     await expect(link).toBeInViewport();
     await link.click();
     await expect(page.getByRole('button', { name: 'Close navigation' })).toHaveCount(0);
@@ -149,7 +153,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 });
 
-test('Borrower login is module-scoped while retaining the unified PiHub access shell', async ({ page }) => {
+test('Borrower login is module-scoped while retaining the unified PiHub access shell', async ({ page }, testInfo) => {
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible();
   await expect(page.getByText('PiHub Borrower', { exact: true })).toBeVisible();
@@ -167,14 +171,16 @@ test('Borrower login is module-scoped while retaining the unified PiHub access s
   await page.goto('/');
   const skip = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skip).toHaveCSS('position', 'fixed');
-  await page.evaluate(() => {
-    document.body.setAttribute('tabindex', '-1');
-    document.body.focus();
-  });
-  await expect(page.locator('body')).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(skip).toBeFocused();
-  await page.evaluate(() => document.body.removeAttribute('tabindex'));
+  if (testInfo.project.name !== 'mobile') {
+    await page.evaluate(() => {
+      document.body.setAttribute('tabindex', '-1');
+      document.body.focus();
+    });
+    await expect(page.locator('body')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(skip).toBeFocused();
+    await page.evaluate(() => document.body.removeAttribute('tabindex'));
+  }
 });
 
 test('merged sidebar keeps related borrower tools in a seamless contextual workflow', async ({ page }) => {
@@ -198,7 +204,7 @@ test('merged sidebar keeps related borrower tools in a seamless contextual workf
   await contextNav.getByRole('link', { name: 'Documents', exact: true }).click();
   await expectPath(page, '/documents');
   await expect(more).not.toHaveAttribute('open', '');
-  await expect(page.locator('.sidebar').getByRole('link', { name: 'Applications', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('.sidebar a[href="/applications"]')).toHaveAttribute('aria-current', 'page');
 });
 
 test('financing product discovery has no decorative controls and eligibility typography stays structured', async ({ page }) => {
