@@ -144,7 +144,23 @@ function loadDemoProjection(state: BorrowerState, applicationId: string): Borrow
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as BorrowerPlatformProjection;
     if (parsed.applicationId !== app.id) return fallback;
-    return { ...fallback, ...parsed, vaultItems: fallback.vaultItems };
+
+    const approvals = parsed.approvals?.length ? parsed.approvals : fallback.approvals;
+    const persistedWork = new Map((parsed.workItems ?? []).map((item) => [item.id, item]));
+    const workItems = fallback.workItems.map((item) => {
+      const persisted = persistedWork.get(item.id);
+      return persisted ? { ...item, status: persisted.status, updatedAt: persisted.updatedAt } : item;
+    });
+    const submissionReady = (['finance', 'legal', 'signatory'] as ApprovalGateType[])
+      .every((gate) => approvals.some((item) => item.type === gate && item.status === 'approved'));
+
+    return {
+      ...fallback,
+      projectionRevision: Math.max(fallback.projectionRevision, parsed.projectionRevision ?? 0),
+      approvals,
+      submissionReady,
+      workItems
+    };
   } catch {
     return fallback;
   }
@@ -183,7 +199,7 @@ export function PlatformIntegrationProvider({ children }: { children: React.Reac
 
   useEffect(() => {
     void refresh();
-  }, [app.id, app.createdAt, auth.status, store.mode]);
+  }, [app.id, app.createdAt, app.status, auth.status, store.mode, store.state.organization.verificationStatus, store.state.advanced.companyVault.length]);
 
   useEffect(() => {
     if (store.mode !== 'demo' || !projection) return;
