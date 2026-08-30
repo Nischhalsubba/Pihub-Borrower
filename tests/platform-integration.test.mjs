@@ -43,7 +43,7 @@ test('borrower UI consumes safe cross-module projections without regressing fund
 test('platform edge API verifies caller before service-role RPC delegation', () => {
   const edge = read('supabase/functions/platform-api/index.ts');
   assert.match(edge, /auth\.getUser\(token\)/);
-  assert.match(edge, /caller_user_id: user\.id/);
+  assert.match(edge, /caller_user_id\s*:\s*user\.id/);
   assert.match(edge, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(edge, /origin_not_allowed/);
   assert.doesNotMatch(edge, /access-control-allow-origin['"]?:\s*['"]\*['"]/i);
