@@ -59,7 +59,7 @@ test('first-login onboarding is a persistent cross-route spotlight overlay', () 
   for (const moduleName of ['Borrower', 'Advisory', 'Admin / Compliance', 'Investor']) assert.ok(onboardingPage.includes(moduleName), `Missing onboarding module ${moduleName}`);
   for (const section of ['Financing', 'Applications', 'Execution', 'PiHub modules', 'Servicing', 'Organization', 'Workspace tools']) assert.ok(onboardingPage.includes(section), `Missing onboarding section ${section}`);
   for (const route of ["'/products'", "'/application'", "'/scenario-lab'", "'/servicing'", "'/team'", "'/help'"]) assert.ok(onboardingPage.includes(route), `Missing cross-route onboarding target ${route}`);
-  assert.match(help, /to="\/\?tour=1"/);
+  assert.match(help, /to="\/help\?tour=1"/);
 });
 
 test('scenario offer comparison uses one seven-column header and row contract', () => {
