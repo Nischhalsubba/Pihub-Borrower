@@ -16,6 +16,9 @@
 
 .route-stage {
   width: 100%;
+  /* GSAP owns route motion. The legacy CSS transform made fixed dialogs use
+     the route as their containing block during entry, clipping overlays. */
+  animation: none;
 }
 
 .workspace-context-shell,
@@ -219,13 +222,37 @@
   justify-content: flex-start;
 }
 
-/* Dialogs must remain usable on short laptops and mobile landscape. */
+/* Sidebar status must remain legible instead of folding into its description. */
+.pihub-system-line {
+  display: flex;
+  align-items: center;
+  gap: var(--pihub-space-2);
+  white-space: nowrap;
+}
+
+.pihub-system-line > span:last-child {
+  margin-left: auto;
+}
+
+.pihub-sidebar-foot small {
+  overflow-wrap: anywhere;
+}
+
+/* Dialogs must remain viewport-owned even when opened during route entry. */
 .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .modal {
+  min-height: 0;
+  height: fit-content;
+  max-height: calc(100vh - 40px);
   max-height: calc(100dvh - 40px);
   max-width: 100%;
   overflow: auto;
@@ -289,6 +316,7 @@
 
   .modal {
     width: 100%;
+    max-height: calc(100vh - 24px);
     max-height: calc(100dvh - 24px);
     padding: var(--pihub-space-4);
   }
