@@ -12,10 +12,8 @@ const noStoreHeaders = {
 };
 
 function configuredOrigins(): Set<string> {
-  return new Set((Deno.env.get('PIHUB_ALLOWED_ORIGINS') ?? '')
-    .split(',').map((value) => value.trim()).filter(Boolean));
+  return new Set((Deno.env.get('PIHUB_ALLOWED_ORIGINS') ?? '').split(',').map((value) => value.trim()).filter(Boolean));
 }
-
 function corsHeaders(request: Request): Record<string, string> | null {
   const origin = request.headers.get('origin');
   if (!origin) return {};
@@ -28,12 +26,10 @@ function corsHeaders(request: Request): Record<string, string> | null {
     'vary': 'Origin'
   };
 }
-
 function json(request: Request, body: unknown, status = 200): Response {
   const cors = corsHeaders(request);
   return new Response(JSON.stringify(body), { status, headers: { ...noStoreHeaders, ...(cors ?? {}) } });
 }
-
 function normalizedPath(request: Request): string {
   const pathname = new URL(request.url).pathname;
   const marker = '/platform-api';
@@ -41,7 +37,6 @@ function normalizedPath(request: Request): string {
   if (index === -1) return pathname;
   return pathname.slice(index + marker.length) || '/';
 }
-
 function statusForRpcError(code?: string): number {
   if (code === '42501' || code === '28000') return 403;
   if (code === '22023') return 400;
@@ -75,11 +70,7 @@ Deno.serve(async (request) => {
       const { data, error } = await service.rpc('pihub_session_context', { caller_user_id: user.id });
       if (error) return json(request, { code: 'session_context_failed', message: 'Unable to load PiHub access context.' }, statusForRpcError(error.code));
       const context = data as SessionContext;
-      return json(request, {
-        authenticated: true,
-        user: { id: user.id, email: user.email ?? '', name: context.displayName || user.email || 'PiHub user', modules: context.modules },
-        preferredLocale: context.preferredLocale
-      });
+      return json(request, { authenticated: true, user: { id: user.id, email: user.email ?? '', name: context.displayName || user.email || 'PiHub user', modules: context.modules }, preferredLocale: context.preferredLocale });
     }
 
     if (request.method === 'GET' && path === '/api/v1/borrower/integration') {
@@ -99,14 +90,17 @@ Deno.serve(async (request) => {
     if (request.method === 'POST' && path === '/api/v1/borrower/approvals') {
       const body = await request.json() as { applicationId?: string; type?: string; decision?: string; note?: string };
       if (!body.applicationId || !body.type || !body.decision) return json(request, { code: 'invalid_request', message: 'applicationId, type and decision are required.' }, 400);
-      const { data, error } = await service.rpc('pihub_borrower_set_approval', {
-        application_key: body.applicationId,
-        approval_gate: body.type,
-        decision: body.decision,
-        decision_note: body.note ?? '',
-        caller_user_id: user.id
-      });
+      const { data, error } = await service.rpc('pihub_borrower_set_approval', { application_key: body.applicationId, approval_gate: body.type, decision: body.decision, decision_note: body.note ?? '', caller_user_id: user.id });
       if (error) return json(request, { code: 'approval_update_failed', message: 'Unable to update this approval gate.' }, statusForRpcError(error.code));
+      return json(request, data);
+    }
+
+    const vaultMatch = path.match(/^\/api\/v1\/borrower\/vault\/([^/]+)\/reuse$/i);
+    if (request.method === 'POST' && vaultMatch) {
+      const body = await request.json() as { applicationId?: string };
+      if (!body.applicationId) return json(request, { code: 'invalid_request', message: 'applicationId is required.' }, 400);
+      const { data, error } = await service.rpc('pihub_borrower_reuse_vault_item', { application_key: body.applicationId, vault_item_key: decodeURIComponent(vaultMatch[1]), caller_user_id: user.id });
+      if (error) return json(request, { code: 'vault_reuse_failed', message: 'Unable to reuse this Company Vault document.' }, statusForRpcError(error.code));
       return json(request, data);
     }
 
