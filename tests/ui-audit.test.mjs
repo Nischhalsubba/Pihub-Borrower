@@ -6,9 +6,11 @@ import { join } from 'node:path';
 const root = new URL('../', import.meta.url).pathname;
 const read = (path) => readFileSync(join(root, path), 'utf8');
 const main = read('src/main.tsx');
+const app = read('src/App.tsx');
 const audit = read('packages/ui/src/pihub-audit.css');
 const onboardingCss = read('packages/ui/src/pihub-onboarding.css');
 const onboardingPage = read('src/pages/OnboardingPage.tsx');
+const onboardingGate = read('src/components/OnboardingGate.tsx');
 const onboardingState = read('src/onboarding.ts');
 const overview = read('src/pages/OverviewPage.tsx');
 const help = read('src/pages/HelpPage.tsx');
@@ -37,18 +39,26 @@ test('overview financing timeline uses a readable scoped typography hierarchy', 
   assert.match(onboardingCss, /\.overview-timeline-card \.platform-note,[\s\S]*font-size: 11\.5px/);
 });
 
-test('first-login onboarding is personalized, persistent and explains cross-module handoffs', () => {
-  assert.match(overview, /hasCompletedBorrowerOnboarding\(auth\.user\?\.id\)/);
-  assert.match(overview, /markBorrowerOnboardingComplete\(auth\.user\?\.id\)/);
-  assert.match(overview, /tour['"]\) === '1'/);
+test('first-login onboarding is a persistent cross-route spotlight overlay', () => {
+  assert.match(app, /<OnboardingGate\/>/);
+  assert.doesNotMatch(overview, /OnboardingPage/);
+  assert.match(onboardingGate, /hasCompletedBorrowerOnboarding\(auth\.user\?\.id\)/);
+  assert.match(onboardingGate, /markBorrowerOnboardingComplete\(auth\.user\?\.id\)/);
+  assert.match(onboardingGate, /get\('tour'\) === '1'/);
+  assert.match(onboardingState, /ONBOARDING_VERSION = 'v2'/);
   assert.match(onboardingState, /pihub\.borrower\.onboarding\.\$\{ONBOARDING_VERSION\}/);
   assert.match(onboardingState, /localStorage\.setItem/);
   assert.match(onboardingPage, /auth\.user\?\.name/);
   assert.match(onboardingPage, /Good morning/);
   assert.match(onboardingPage, /Good afternoon/);
   assert.match(onboardingPage, /Good evening/);
+  assert.match(onboardingPage, /className="product-tour"/);
+  assert.match(onboardingPage, /className="product-tour-spotlight"/);
+  assert.match(onboardingCss, /\.product-tour \{[\s\S]*position: fixed/);
+  assert.match(onboardingCss, /\.product-tour-mask \{[\s\S]*background: rgb\(8 16 30 \/ \.66\)/);
   for (const moduleName of ['Borrower', 'Advisory', 'Admin / Compliance', 'Investor']) assert.ok(onboardingPage.includes(moduleName), `Missing onboarding module ${moduleName}`);
-  for (const section of ['Find financing', 'Build the application', 'Execute the deal', 'After funding', 'Governance & help']) assert.ok(onboardingPage.includes(section), `Missing onboarding section ${section}`);
+  for (const section of ['Financing', 'Applications', 'Execution', 'PiHub modules', 'Servicing', 'Organization', 'Workspace tools']) assert.ok(onboardingPage.includes(section), `Missing onboarding section ${section}`);
+  for (const route of ["'/products'", "'/application'", "'/scenario-lab'", "'/servicing'", "'/team'", "'/help'"]) assert.ok(onboardingPage.includes(route), `Missing cross-route onboarding target ${route}`);
   assert.match(help, /to="\/\?tour=1"/);
 });
 
