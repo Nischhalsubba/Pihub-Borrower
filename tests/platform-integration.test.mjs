@@ -24,12 +24,14 @@ test('browser integration never embeds service credentials or bearer-token stora
   assert.match(client, /fetchBorrowerIntegrationProjection/);
 });
 
-test('borrower UI consumes safe cross-module projections', () => {
+test('borrower UI consumes safe cross-module projections without regressing funded servicing', () => {
   const overview = read('src/pages/OverviewPage.tsx');
   const requests = read('src/pages/RequestsPage.tsx');
   const qualification = read('src/pages/QualificationPage.tsx');
   const financing = read('src/pages/FinancingPage.tsx');
   assert.match(overview, /PiHub financing timeline/);
+  assert.match(overview, /Borrower \/ Funded facility/);
+  assert.match(overview, /Open loan servicing/);
   assert.match(requests, /PiHub Request Center/);
   assert.match(requests, /borrowerCompletable/);
   assert.match(qualification, /Compliance readiness/);
