@@ -7,6 +7,11 @@ const root = new URL('../', import.meta.url).pathname;
 const read = (path) => readFileSync(join(root, path), 'utf8');
 const main = read('src/main.tsx');
 const audit = read('packages/ui/src/pihub-audit.css');
+const onboardingCss = read('packages/ui/src/pihub-onboarding.css');
+const onboardingPage = read('src/pages/OnboardingPage.tsx');
+const onboardingState = read('src/onboarding.ts');
+const overview = read('src/pages/OverviewPage.tsx');
+const help = read('src/pages/HelpPage.tsx');
 const scenario = read('src/pages/ScenarioLabPage.tsx');
 const capital = read('src/pages/CapitalPage.tsx');
 const portfolio = read('src/pages/PortfolioPage.tsx');
@@ -14,13 +19,37 @@ const servicing = read('src/pages/ServicingPage.tsx');
 
 const count = (source, token) => source.split(token).length - 1;
 
-test('whole-app audit layer loads after the canonical PiHub layers', () => {
-  const motion = main.indexOf("pihub-motion.css");
-  const audited = main.indexOf("pihub-audit.css");
-  assert.ok(motion >= 0 && audited > motion, 'pihub-audit.css must load last');
+test('whole-app audit layer loads after the canonical PiHub and onboarding layers', () => {
+  const motion = main.indexOf('pihub-motion.css');
+  const onboarding = main.indexOf('pihub-onboarding.css');
+  const audited = main.indexOf('pihub-audit.css');
+  assert.ok(motion >= 0 && onboarding > motion && audited > onboarding, 'pihub-audit.css must remain the final PiHub CSS layer');
   assert.match(audit, /\.workspace-context-shell,[\s\S]*\.sync-warning[\s\S]*max-width: var\(--pihub-content-max\)/);
   assert.match(audit, /\.route-stage \{[\s\S]*animation: none/);
   assert.match(audit, /\.modal \{[\s\S]*max-height: calc\(100dvh - 40px\)[\s\S]*overflow: auto/);
+});
+
+test('overview financing timeline uses a readable scoped typography hierarchy', () => {
+  assert.match(overview, /className="overview-timeline-card"/);
+  assert.match(onboardingCss, /\.overview-timeline-card \.card-head h2 \{[\s\S]*font-size: 16px/);
+  assert.match(onboardingCss, /\.overview-timeline-card \.platform-timeline \.stage-row strong \{[\s\S]*font-size: 12\.5px/);
+  assert.match(onboardingCss, /\.overview-timeline-card \.platform-timeline \.stage-row small \{[\s\S]*font-size: 11px/);
+  assert.match(onboardingCss, /\.overview-timeline-card \.platform-note,[\s\S]*font-size: 11\.5px/);
+});
+
+test('first-login onboarding is personalized, persistent and explains cross-module handoffs', () => {
+  assert.match(overview, /hasCompletedBorrowerOnboarding\(auth\.user\?\.id\)/);
+  assert.match(overview, /markBorrowerOnboardingComplete\(auth\.user\?\.id\)/);
+  assert.match(overview, /tour['"]\) === '1'/);
+  assert.match(onboardingState, /pihub\.borrower\.onboarding\.\$\{ONBOARDING_VERSION\}/);
+  assert.match(onboardingState, /localStorage\.setItem/);
+  assert.match(onboardingPage, /auth\.user\?\.name/);
+  assert.match(onboardingPage, /Good morning/);
+  assert.match(onboardingPage, /Good afternoon/);
+  assert.match(onboardingPage, /Good evening/);
+  for (const moduleName of ['Borrower', 'Advisory', 'Admin / Compliance', 'Investor']) assert.ok(onboardingPage.includes(moduleName), `Missing onboarding module ${moduleName}`);
+  for (const section of ['Find financing', 'Build the application', 'Execute the deal', 'After funding', 'Governance & help']) assert.ok(onboardingPage.includes(section), `Missing onboarding section ${section}`);
+  assert.match(help, /to="\/\?tour=1"/);
 });
 
 test('scenario offer comparison uses one seven-column header and row contract', () => {
