@@ -289,6 +289,20 @@
   min-width: 0;
 }
 
+@media (max-width: 900px) {
+  /* A translated drawer is still considered visible by browsers and test
+     tooling. Visibility/pointer state makes the closed rail genuinely inert. */
+  .sidebar.pihub-sidebar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .sidebar.pihub-sidebar.is-open {
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
 @media (max-width: 760px) {
   .page-head {
     align-items: flex-start;
