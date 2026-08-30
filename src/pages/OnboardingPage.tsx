@@ -1,110 +1,33 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Icon, type IconName } from '../components/Icons';
-import { Status } from '../components/UI';
 import { usePlatformIntegration } from '../platform/PlatformIntegrationContext';
 import type { PlatformWorkflowState } from '../platform/types';
 import { useBorrowerStore } from '../state/store';
+
+type Placement = 'auto' | 'right' | 'bottom' | 'left' | 'top';
 
 type TourStep = {
   label: string;
   title: string;
   body: string;
-  icon: IconName;
   bullets: string[];
-  locations: string[];
-  moduleMap?: boolean;
+  route: string;
+  selectors: string[];
+  icon: IconName;
+  placement?: Placement;
+  moduleFlow?: boolean;
 };
 
-const tourSteps: TourStep[] = [
-  {
-    label: 'Start here',
-    title: 'Your Borrower control centre',
-    body: 'PiHub Borrower keeps your financing work in one place. The Overview tells you what PiHub already has, what needs your attention, and the next action that moves the deal forward.',
-    icon: 'home',
-    bullets: [
-      'Use the priority strip for the most important borrower action.',
-      'Track application completion, open PiHub requests, accepted documents and requested financing at a glance.',
-      'The financing timeline shows the borrower-safe state of the same deal across PiHub modules.'
-    ],
-    locations: ['Overview', 'Global search', 'Notifications']
-  },
-  {
-    label: 'Find financing',
-    title: 'Choose the right financing path before you apply',
-    body: 'Start in Financing when you want to understand available structures and check whether the current deal is ready for them. This reduces rework before a formal application reaches PiHub.',
-    icon: 'products',
-    bullets: [
-      'Financing products explains available structures, requirements and provider fit.',
-      'Pre-qualification turns your current deal data into an explainable readiness assessment.',
-      'Product-specific requirements flow into the application checklist, so the application reflects the financing structure you selected.'
-    ],
-    locations: ['Financing → Financing products', 'Financing → Pre-qualification']
-  },
-  {
-    label: 'Build the application',
-    title: 'Create one canonical application instead of repeating the same data',
-    body: 'Applications is the working area for the deal record. Company, project, financials, documents and requests all belong to the same application ID so PiHub and connected modules stay synchronized.',
-    icon: 'applications',
-    bullets: [
-      'Complete the financing request, company, project/property and financial sections.',
-      'Use Connected data and the Data room to bring evidence into the same governed workspace.',
-      'Upload documents once, respond to PiHub requests, follow messages and keep version history instead of overwriting prior submissions.'
-    ],
-    locations: ['Applications → Financing request', 'Company / Project / Financials', 'Documents / Requests / Messages', 'Data room / Connected data / Versions']
-  },
-  {
-    label: 'Execute the deal',
-    title: 'Move from application into negotiation, closing and capital execution',
-    body: 'Execution contains the decision and closing tools used after the deal has enough information to progress. Scenario analysis remains borrower-side until you deliberately save or act on a financing decision.',
-    icon: 'chart',
-    bullets: [
-      'Scenario lab lets you stress amount, pricing, leverage and debt service without silently changing lender terms.',
-      'Negotiation and Terms & closing keep counters, accepted terms, conditions and signing actions tied to the same application.',
-      'Draws & inspections and Calendar connect construction funding and deadlines to the canonical deal record.'
-    ],
-    locations: ['Execution → Scenario lab', 'Negotiation', 'Terms & closing', 'Draws & inspections', 'Calendar']
-  },
-  {
-    label: 'PiHub modules',
-    title: 'How Borrower, Advisory, Admin/Compliance and Investor work together',
-    body: 'You do not need to jump between separate internal systems. Your Borrower action creates a controlled handoff, and each PiHub module receives only the information and authority it needs.',
-    icon: 'team',
-    bullets: [
-      'Borrower owns application inputs, responses, documents, consent and borrower-side decisions.',
-      'Advisory coordinates structuring, due diligence, requests and term progression.',
-      'Admin / Compliance handles platform controls, organization verification, permissions, governance and regulated requests.',
-      'Investor receives authorized opportunity information for review, commitment and relevant post-funding visibility.'
-    ],
-    locations: ['One application ID', 'Controlled handoffs', 'Borrower-safe status only'],
-    moduleMap: true
-  },
-  {
-    label: 'After funding',
-    title: 'The workspace continues after the facility funds',
-    body: 'Funding is not the end of the Borrower journey. Servicing keeps payments, reporting, covenants, draws, payoff or refinance requests and sustainability obligations connected to the funded facility.',
-    icon: 'activity',
-    bullets: [
-      'Loan servicing shows borrower-visible facility terms, obligations and servicing requests.',
-      'Portfolio gives a consolidated view when the organization has more than one facility.',
-      'Payments & statements and ESG & sustainability keep ongoing evidence and reporting attached to the correct facility.'
-    ],
-    locations: ['Servicing → Loan servicing', 'Portfolio', 'Payments & statements', 'ESG & sustainability']
-  },
-  {
-    label: 'Governance & help',
-    title: 'Manage people, consent, privacy and support without leaving PiHub',
-    body: 'Organization tools govern who can work on the deal and how information is shared. Borrower Copilot and Help provide guidance without exposing private underwriting or internal compliance notes.',
-    icon: 'help',
-    bullets: [
-      'Organization & team manages borrower-side collaborators and external professionals.',
-      'Disclosures & consent makes authorized sharing explicit and revocable.',
-      'Privacy & data rights and Complaints & disputes create formal Admin/Compliance workflows.',
-      'Borrower Copilot and Help explain the workspace, missing information and support options using borrower-authorized context.'
-    ],
-    locations: ['Organization', 'Disclosures & consent', 'Privacy & data rights', 'Complaints & disputes', 'Borrower Copilot', 'Help']
-  }
-];
+type SpotlightRect = {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+};
 
 const workflowLabels: Record<PlatformWorkflowState, string> = {
   not_started: 'Not started',
@@ -115,93 +38,304 @@ const workflowLabels: Record<PlatformWorkflowState, string> = {
   closed: 'Closed'
 };
 
-function workflowTone(state?: PlatformWorkflowState): 'neutral' | 'info' | 'warning' | 'success' {
-  if (state === 'completed' || state === 'closed') return 'success';
-  if (state === 'in_progress' || state === 'ready') return 'info';
-  if (state === 'blocked') return 'warning';
-  return 'neutral';
-}
-
 function greetingForHour(hour: number): string {
   if (hour < 12) return 'Good morning';
   if (hour < 18) return 'Good afternoon';
   return 'Good evening';
 }
 
-export function OnboardingPage({ onComplete }: { onComplete: () => void }) {
+function visibleTarget(selectors: string[]): HTMLElement | null {
+  for (const selector of selectors) {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
+    const target = elements.find((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (target) return target;
+  }
+  return null;
+}
+
+function paddedRect(rect: DOMRect): SpotlightRect {
+  const padding = window.innerWidth < 700 ? 6 : 9;
+  const left = Math.max(8, rect.left - padding);
+  const top = Math.max(8, rect.top - padding);
+  const right = Math.min(window.innerWidth - 8, rect.right + padding);
+  const bottom = Math.min(window.innerHeight - 8, rect.bottom + padding);
+  return { top, left, right, bottom, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
+function tooltipStyle(rect: SpotlightRect | null, placement: Placement = 'auto'): React.CSSProperties {
+  if (typeof window === 'undefined') return {};
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const edge = 16;
+  const gap = 18;
+  const width = Math.min(410, viewportWidth - edge * 2);
+  const estimatedHeight = 390;
+
+  if (!rect || viewportWidth < 760) return { left: edge, right: edge, bottom: edge, width: 'auto' };
+
+  const clampTop = (value: number) => Math.max(edge, Math.min(value, viewportHeight - estimatedHeight - edge));
+  const clampLeft = (value: number) => Math.max(edge, Math.min(value, viewportWidth - width - edge));
+  const rightFits = rect.right + gap + width <= viewportWidth - edge;
+  const leftFits = rect.left - gap - width >= edge;
+  const bottomFits = rect.bottom + gap + estimatedHeight <= viewportHeight - edge;
+  const topFits = rect.top - gap - estimatedHeight >= edge;
+
+  if (placement === 'right' && rightFits) return { width, left: rect.right + gap, top: clampTop(rect.top) };
+  if (placement === 'left' && leftFits) return { width, left: rect.left - gap - width, top: clampTop(rect.top) };
+  if (placement === 'bottom' && bottomFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.bottom + gap };
+  if (placement === 'top' && topFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.top - gap - estimatedHeight };
+  if (rightFits) return { width, left: rect.right + gap, top: clampTop(rect.top) };
+  if (leftFits) return { width, left: rect.left - gap - width, top: clampTop(rect.top) };
+  if (bottomFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.bottom + gap };
+  if (topFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.top - gap - estimatedHeight };
+  return { width, left: viewportWidth - width - edge, top: edge };
+}
+
+export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) {
   const auth = useAuth();
   const { state, app } = useBorrowerStore();
   const { projection } = usePlatformIntegration();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLElement | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
-  const step = tourSteps[stepIndex];
+  const [targetRect, setTargetRect] = useState<SpotlightRect | null>(null);
   const fullName = auth.user?.name?.trim() || state.profile.name;
   const firstName = fullName.split(/\s+/)[0] || 'there';
   const greeting = useMemo(() => greetingForHour(new Date().getHours()), []);
-  const progress = Math.round(((stepIndex + 1) / tourSteps.length) * 100);
+
+  const steps = useMemo<TourStep[]>(() => [
+    {
+      label: 'Welcome',
+      title: `${greeting}, ${firstName}`,
+      body: `You are signed in as ${fullName} for ${state.organization.name}. This tour stays on top of the real PiHub workspace, highlights exactly what matters, and moves between pages as the workflow changes.`,
+      bullets: [`Current financing workspace: ${app.name}`, 'Nothing in this tour changes your application or deal data.'],
+      route: '/',
+      selectors: ['.account-button'],
+      icon: 'account',
+      placement: 'bottom'
+    },
+    {
+      label: 'Navigate',
+      title: 'Use the workspace navigation as your map',
+      body: 'The left navigation is organized by the borrower journey rather than by internal PiHub teams. Each section opens the tools needed for that stage of the financing lifecycle.',
+      bullets: ['Overview shows the next action.', 'Financing, Applications, Execution, Servicing and Organization follow the deal from discovery through post-funding management.'],
+      route: '/',
+      selectors: ['#borrower-navigation', '.mobile-menu'],
+      icon: 'menu',
+      placement: 'right'
+    },
+    {
+      label: 'Next action',
+      title: 'Start with the one thing that moves the deal forward',
+      body: 'The priority strip turns all of the underlying workflow state into one borrower action. It may point to a PiHub request, an approval blocker, a missing section or submission readiness.',
+      bullets: ['Open the highlighted action before browsing the rest of the dashboard.', 'The KPI cards below it give context, but this strip tells you what to do next.'],
+      route: '/',
+      selectors: ['.priority-strip'],
+      icon: 'activity',
+      placement: 'bottom'
+    },
+    {
+      label: 'Financing',
+      title: 'Choose the financing path before building the full application',
+      body: 'PiHub takes you to the real Financing workspace here. Use products to understand structures and requirements, then use pre-qualification to check readiness against the deal data you already have.',
+      bullets: ['Product requirements feed the application checklist.', 'Pre-qualification should explain why the deal is or is not ready rather than returning a mysterious score.'],
+      route: '/products',
+      selectors: ['.workspace-context-shell', '.page-head'],
+      icon: 'products',
+      placement: 'bottom'
+    },
+    {
+      label: 'Applications',
+      title: 'One application is the canonical borrower record',
+      body: 'Applications keeps the financing request, company, project, financials, connected data, documents, requests and messages tied to one application ID instead of forcing you to repeat the same information in separate systems.',
+      bullets: ['Use the section navigation to move through the application without losing context.', 'Version history preserves prior submitted states instead of silently overwriting them.'],
+      route: '/application',
+      selectors: ['.workspace-context-shell', '.page-head'],
+      icon: 'applications',
+      placement: 'bottom'
+    },
+    {
+      label: 'Execution',
+      title: 'Move from analysis into negotiation and closing',
+      body: 'Execution contains scenario analysis, negotiation, terms and closing, construction draws and calendar actions. PiHub keeps these decisions attached to the same deal rather than creating disconnected spreadsheets and message threads.',
+      bullets: ['Scenario changes remain borrower-side until you deliberately save or act on them.', 'Accepted terms and closing actions become controlled cross-module events.'],
+      route: '/scenario-lab',
+      selectors: ['.workspace-context-shell', '.page-head'],
+      icon: 'chart',
+      placement: 'bottom'
+    },
+    {
+      label: 'PiHub modules',
+      title: 'This is how the other PiHub modules connect to your deal',
+      body: 'The financing timeline is the borrower-safe projection of one shared deal. Your actions create controlled handoffs; you do not need to re-enter the application in Advisory, Admin/Compliance or Investor.',
+      bullets: ['Borrower owns inputs, documents, responses, consent and borrower decisions.', 'Internal underwriting, investment committee and compliance notes remain private even though the workflow state is synchronized.'],
+      route: '/',
+      selectors: ['.overview-timeline-card'],
+      icon: 'team',
+      placement: 'left',
+      moduleFlow: true
+    },
+    {
+      label: 'Servicing',
+      title: 'PiHub continues after funding',
+      body: 'Once a facility is funded, Servicing becomes the home for borrower-visible facility terms, payments, statements, reporting, covenants, draws, refinance or payoff requests and sustainability obligations.',
+      bullets: ['Portfolio consolidates multiple facilities.', 'Ongoing evidence remains attached to the funded facility and canonical organization record.'],
+      route: '/servicing',
+      selectors: ['.workspace-context-shell', '.page-head'],
+      icon: 'activity',
+      placement: 'bottom'
+    },
+    {
+      label: 'Organization',
+      title: 'People, consent and governance are part of the workflow',
+      body: 'Organization controls who can work on the deal and how information may be shared. Privacy requests and complaints create formal Admin/Compliance handoffs rather than disappearing into an inbox.',
+      bullets: ['Manage borrower-side collaborators and external professionals here.', 'Disclosures and consent make authorized sharing explicit and revocable.'],
+      route: '/team',
+      selectors: ['.workspace-context-shell', '.page-head'],
+      icon: 'team',
+      placement: 'bottom'
+    },
+    {
+      label: 'Workspace tools',
+      title: 'Search, notifications and your account stay available everywhere',
+      body: 'The top bar is global. Search can jump to pages and borrower records, notifications surface work that needs attention, and the account menu gives quick access to organization, privacy and sign-out controls.',
+      bullets: ['Use global search instead of manually hunting through sections.', 'Notifications are borrower-facing signals, not a substitute for the canonical request or application record.'],
+      route: '/',
+      selectors: ['.topbar-actions', '.notification-button'],
+      icon: 'search',
+      placement: 'bottom'
+    },
+    {
+      label: 'Help & Copilot',
+      title: 'Guidance is always available, and this tour can be replayed',
+      body: 'Borrower Copilot can explain the workspace using borrower-authorized context. Help contains plain-language guidance, support requests and the control to replay this walkthrough whenever somebody new joins the team.',
+      bullets: ['Copilot must not expose private underwriting or internal compliance notes.', 'Open guided tour from Help whenever you want this same spotlight walkthrough again.'],
+      route: '/help',
+      selectors: ['.help-tour-card', '.page-head'],
+      icon: 'help',
+      placement: 'top'
+    }
+  ], [app.name, firstName, fullName, greeting, state.organization.name]);
+
+  const step = steps[stepIndex];
+  const progress = Math.round(((stepIndex + 1) / steps.length) * 100);
+
+  useEffect(() => {
+    if (location.pathname !== step.route) {
+      setTargetRect(null);
+      navigate(step.route, { replace: true });
+      return;
+    }
+
+    let cancelled = false;
+    let locateTimer = 0;
+    let measureTimer = 0;
+    let attempts = 0;
+    let scrolled = false;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const measure = () => {
+      if (cancelled || !targetRef.current) return;
+      setTargetRect(paddedRect(targetRef.current.getBoundingClientRect()));
+    };
+
+    const locate = () => {
+      if (cancelled) return;
+      const target = visibleTarget(step.selectors);
+      if (!target) {
+        attempts += 1;
+        if (attempts < 60) locateTimer = window.setTimeout(locate, 50);
+        return;
+      }
+      targetRef.current = target;
+      if (!scrolled) {
+        scrolled = true;
+        target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' });
+        measureTimer = window.setTimeout(measure, reducedMotion ? 0 : 260);
+      } else {
+        measure();
+      }
+    };
+
+    const refresh = () => measure();
+    locateTimer = window.setTimeout(locate, 0);
+    window.addEventListener('resize', refresh);
+    window.addEventListener('scroll', refresh, true);
+    return () => {
+      cancelled = true;
+      targetRef.current = null;
+      window.clearTimeout(locateTimer);
+      window.clearTimeout(measureTimer);
+      window.removeEventListener('resize', refresh);
+      window.removeEventListener('scroll', refresh, true);
+    };
+  }, [location.pathname, navigate, step.route, step.selectors]);
+
+  useEffect(() => {
+    cardRef.current?.focus({ preventScroll: true });
+  }, [stepIndex, location.pathname]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onComplete();
+      if (event.key === 'ArrowLeft' && stepIndex > 0) setStepIndex((current) => current - 1);
+      if (event.key === 'ArrowRight' && stepIndex < steps.length - 1) setStepIndex((current) => current + 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onComplete, stepIndex, steps.length]);
+
+  const next = () => {
+    if (stepIndex === steps.length - 1) onComplete();
+    else setStepIndex((current) => current + 1);
+  };
+  const back = () => setStepIndex((current) => Math.max(0, current - 1));
+  const style = tooltipStyle(targetRect, step.placement);
   const modules = [
-    { id: 'borrower' as const, icon: 'account' as IconName, title: 'Borrower', role: 'Your workspace', description: 'Application inputs, documents, responses, consent and borrower decisions.' },
-    { id: 'advisory' as const, icon: 'chart' as IconName, title: 'Advisory', role: 'Structuring & diligence', description: 'Coordinates financing structure, due diligence, information requests and terms.' },
-    { id: 'admin' as const, icon: 'building' as IconName, title: 'Admin / Compliance', role: 'Governance & controls', description: 'Organization verification, permissions, compliance, signing, privacy and platform controls.' },
-    { id: 'investor' as const, icon: 'money' as IconName, title: 'Investor', role: 'Capital review', description: 'Reviews authorized opportunity information, commitments and relevant servicing projections.' }
+    { id: 'borrower' as const, label: 'Borrower', detail: 'Inputs & decisions' },
+    { id: 'advisory' as const, label: 'Advisory', detail: 'Structuring & diligence' },
+    { id: 'admin' as const, label: 'Admin / Compliance', detail: 'Governance & controls' },
+    { id: 'investor' as const, label: 'Investor', detail: 'Capital review' }
   ];
 
-  const next = () => setStepIndex((current) => Math.min(current + 1, tourSteps.length - 1));
-  const back = () => setStepIndex((current) => Math.max(current - 1, 0));
+  return <div className="product-tour" aria-label="PiHub guided tour">
+    {targetRect ? <>
+      <div className="product-tour-mask" aria-hidden="true" style={{ top: 0, left: 0, right: 0, height: targetRect.top }}/>
+      <div className="product-tour-mask" aria-hidden="true" style={{ top: targetRect.top, left: 0, width: targetRect.left, height: targetRect.height }}/>
+      <div className="product-tour-mask" aria-hidden="true" style={{ top: targetRect.top, left: targetRect.right, right: 0, height: targetRect.height }}/>
+      <div className="product-tour-mask" aria-hidden="true" style={{ top: targetRect.bottom, left: 0, right: 0, bottom: 0 }}/>
+      <div className="product-tour-spotlight" aria-hidden="true" style={{ top: targetRect.top, left: targetRect.left, width: targetRect.width, height: targetRect.height }}/>
+    </> : <div className="product-tour-mask product-tour-mask-full" aria-hidden="true"/>}
 
-  return <div className="route-stage onboarding-stage" aria-label="PiHub guided onboarding">
-    <header className="onboarding-header">
-      <div className="onboarding-welcome">
-        <span className="eyebrow">PiHub / Borrower onboarding</span>
-        <h1>{greeting}, {firstName}</h1>
-        <p>You are signed in as <strong>{fullName}</strong> for <strong>{state.organization.name}</strong>. This short tour explains where to work, what happens next, and how your actions connect safely to the other PiHub modules.</p>
+    <div ref={cardRef} className="product-tour-card" style={style} role="dialog" aria-modal="true" aria-labelledby="product-tour-title" tabIndex={-1}>
+      <div className="product-tour-card-head">
+        <span className="product-tour-icon"><Icon name={step.icon} size={19}/></span>
+        <div><span>{step.label}</span><small>Step {stepIndex + 1} of {steps.length}</small></div>
+        <button type="button" className="product-tour-close" onClick={onComplete} aria-label="Skip guided tour">×</button>
       </div>
-      <button className="button secondary" onClick={onComplete}>Skip tour</button>
-    </header>
+      <div className="product-tour-progress" role="progressbar" aria-label="Guided tour progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }}/></div>
+      <h2 id="product-tour-title">{step.title}</h2>
+      <p className="product-tour-body">{step.body}</p>
+      <ul className="product-tour-points">{step.bullets.map((bullet) => <li key={bullet}><Icon name="check" size={13}/><span>{bullet}</span></li>)}</ul>
 
-    <div className="onboarding-layout">
-      <aside className="onboarding-sidebar">
-        <div className="onboarding-context-card">
-          <span>Current financing workspace</span>
-          <strong>{app.name}</strong>
-          <small>{app.id} · {app.financing.structure}</small>
-        </div>
-        <div className="onboarding-progress-copy"><span>Guided tour</span><strong>Step {stepIndex + 1} of {tourSteps.length}</strong></div>
-        <div className="onboarding-progress" role="progressbar" aria-label="Onboarding progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }}/></div>
-        <nav className="onboarding-step-list" aria-label="Onboarding steps">
-          {tourSteps.map((item, index) => <button key={item.label} className={index === stepIndex ? 'active' : ''} aria-current={index === stepIndex ? 'step' : undefined} onClick={() => setStepIndex(index)}><span>{index + 1}</span><strong>{item.label}</strong></button>)}
-        </nav>
-      </aside>
+      {step.moduleFlow && <div className="product-tour-module-flow" aria-label="PiHub module handoff flow">{modules.map((module, index) => {
+        const stateItem = projection?.moduleStates.find((item) => item.module === module.id);
+        return <div className="product-tour-module-row" key={module.id}><span>{index + 1}</span><div><strong>{module.label}</strong><small>{module.detail}</small></div><em>{stateItem ? workflowLabels[stateItem.state] : 'Connected'}</em></div>;
+      })}</div>}
 
-      <section className="onboarding-panel" data-onboarding-step={stepIndex + 1} aria-live="polite">
-        <div className="onboarding-step-hero">
-          <span className="onboarding-step-icon"><Icon name={step.icon} size={24}/></span>
-          <div><span className="onboarding-step-kicker">Step {stepIndex + 1} · {step.label}</span><h2>{step.title}</h2></div>
-        </div>
-        <p className="onboarding-step-body">{step.body}</p>
-        <ul className="onboarding-bullet-list">{step.bullets.map((bullet) => <li key={bullet}><span><Icon name="check" size={14}/></span><p>{bullet}</p></li>)}</ul>
-
-        <div className="onboarding-locations"><span>Where you will use this</span><div>{step.locations.map((location) => <strong key={location}>{location}</strong>)}</div></div>
-
-        {step.moduleMap && <div className="module-tour-block">
-          <div className="module-flow-grid">{modules.map((module) => {
-            const currentState = projection?.moduleStates.find((item) => item.module === module.id)?.state;
-            return <article className="module-flow-card" key={module.id}><span className="module-flow-icon"><Icon name={module.icon} size={19}/></span><div className="module-flow-title"><div><strong>{module.title}</strong><small>{module.role}</small></div><Status tone={workflowTone(currentState)}>{currentState ? workflowLabels[currentState] : 'Connected'}</Status></div><p>{module.description}</p></article>;
-          })}</div>
-          <div className="handoff-list" aria-label="Cross-module handoff examples">
-            <div><strong>Submit an application</strong><span>Advisory and Admin / Compliance can begin their controlled review of the same canonical deal.</span></div>
-            <div><strong>Upload evidence or respond to a request</strong><span>Advisory receives the borrower response; Investor sees only information that is authorized for its deal view.</span></div>
-            <div><strong>Counter or accept terms</strong><span>The decision is synchronized to the Advisory and Investor workflow instead of being re-entered in another system.</span></div>
-            <div><strong>Create a privacy request or complaint</strong><span>The request is handed to Admin / Compliance while internal notes remain private.</span></div>
-          </div>
-          <p className="onboarding-boundary-note"><Icon name="warning" size={15}/><span>Borrower shows status and actions that are safe for you to see. Internal underwriting, investment committee and compliance notes stay inside their authorized modules.</span></p>
-        </div>}
-
-        <footer className="onboarding-footer">
-          <button className="button secondary" onClick={back} disabled={stepIndex === 0}>Back</button>
-          <span>{progress}% complete</span>
-          {stepIndex < tourSteps.length - 1 ? <button className="button primary" onClick={next}>Next: {tourSteps[stepIndex + 1].label}<Icon name="chevron" size={14}/></button> : <button className="button primary" onClick={onComplete}>Enter my workspace<Icon name="chevron" size={14}/></button>}
-        </footer>
-      </section>
+      <div className="product-tour-actions">
+        <button type="button" className="button secondary" onClick={back} disabled={stepIndex === 0}>Back</button>
+        <button type="button" className="product-tour-skip" onClick={onComplete}>Skip tour</button>
+        <button type="button" className="button primary" onClick={next}>{stepIndex === steps.length - 1 ? 'Finish tour' : `Next: ${steps[stepIndex + 1].label}`}<Icon name="chevron" size={13}/></button>
+      </div>
     </div>
   </div>;
 }
+
+export const OnboardingPage = BorrowerProductTour;
