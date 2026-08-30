@@ -19,6 +19,7 @@ test('whole-app audit layer loads after the canonical PiHub layers', () => {
   const audited = main.indexOf("pihub-audit.css");
   assert.ok(motion >= 0 && audited > motion, 'pihub-audit.css must load last');
   assert.match(audit, /\.workspace-context-shell,[\s\S]*\.sync-warning[\s\S]*max-width: var\(--pihub-content-max\)/);
+  assert.match(audit, /\.route-stage \{[\s\S]*animation: none/);
   assert.match(audit, /\.modal \{[\s\S]*max-height: calc\(100dvh - 40px\)[\s\S]*overflow: auto/);
 });
 
@@ -43,10 +44,11 @@ test('servicing renders covenant forecasting once', () => {
   assert.equal(count(servicing, 'title="Covenant forecasting"'), 1);
 });
 
-test('dense tables and intermediate topbar widths have overflow protection', () => {
+test('dense tables, sidebar status and intermediate topbar widths have overflow protection', () => {
   for (const selector of ['.portfolio-table', '.draw-table', '.offer-impact-table', '.simple-ledger', '.team-table']) {
     assert.ok(audit.includes(selector), `Missing audited overflow selector ${selector}`);
   }
+  assert.match(audit, /\.pihub-system-line \{[\s\S]*display: flex[\s\S]*white-space: nowrap/);
   assert.match(audit, /@media \(max-width: 1040px\) and \(min-width: 901px\)/);
   assert.match(audit, /\.pihub-topbar \.global-search,[\s\S]*\.pihub-topbar \.language-switch[\s\S]*display: none/);
 });
