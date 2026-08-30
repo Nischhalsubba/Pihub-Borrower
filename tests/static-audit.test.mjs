@@ -78,7 +78,7 @@ test('production runtime does not persist canonical business state in localStora
 test('production authentication uses an HttpOnly-session API boundary instead of cross-app tokens', () => {
   const api = readFileSync(join(root, 'src/services/platformApi.ts'), 'utf8');
   const auth = readFileSync(join(root, 'src/auth/AuthContext.tsx'), 'utf8');
-  assert.match(api, /credentials: 'include'/);
+  assert.match(api, /credentials\s*:\s*'include'/);
   assert.match(api, /\/api\/v1\/session/);
   assert.match(auth, /modules\.includes\('borrower'\)/);
   assert.doesNotMatch(source, /localStorage\.(setItem|getItem)\([^\n]*(token|jwt|session)/i);

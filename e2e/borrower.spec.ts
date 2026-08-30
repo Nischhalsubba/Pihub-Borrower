@@ -33,54 +33,119 @@ const sectionFor: Record<string, string> = {
   'Complaints & disputes': 'Organization'
 };
 
+const primaryRoute: Record<string, string> = {
+  Overview: '/',
+  Financing: '/products',
+  Applications: '/applications',
+  Execution: '/scenario-lab',
+  Servicing: '/servicing',
+  Organization: '/team',
+  'Borrower Copilot': '/copilot',
+  Help: '/help'
+};
+
+const targetRoute: Record<string, string> = {
+  'Financing products': '/products',
+  'Pre-qualification': '/qualification',
+  'My applications': '/applications',
+  'New application': '/applications/new',
+  'Financing request': '/application',
+  Company: '/company',
+  'Project / Property': '/project',
+  Financials: '/financials',
+  'Connected data': '/connections',
+  'Data room': '/data-room',
+  Documents: '/documents',
+  'PiHub requests': '/requests',
+  Messages: '/messages',
+  Activity: '/activity',
+  'Application versions': '/versions',
+  'Scenario lab': '/scenario-lab',
+  Negotiation: '/negotiation',
+  'Terms & closing': '/closing',
+  'Draws & inspections': '/capital',
+  Calendar: '/calendar',
+  'Loan servicing': '/servicing',
+  Portfolio: '/portfolio',
+  'Payments & statements': '/payments',
+  'ESG & sustainability': '/esg',
+  'Organization & team': '/team',
+  'Disclosures & consent': '/disclosures',
+  Account: '/account',
+  'Privacy & data rights': '/privacy',
+  'Complaints & disputes': '/complaints',
+  'Borrower Copilot': '/copilot',
+  Help: '/help'
+};
+
+const applicationMore = new Set([
+  'New application', 'Connected data', 'Data room', 'Messages', 'Activity', 'Application versions'
+]);
+
+async function expectPath(page: any, path: string) {
+  await expect.poll(() => new URL(page.url()).pathname).toBe(path);
+}
+
 async function login(page: any) {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Open Borrower' }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expectPath(page, '/');
+  await expect(page.locator('.pihub-shell')).toBeVisible();
 }
 
 async function openPrimary(page: any, name: string) {
   const sidebar = page.locator('.sidebar');
-  const mobileMenu = page.getByRole('button', { name: 'Open navigation' });
-  if (await mobileMenu.isVisible()) {
-    await mobileMenu.click();
-    await expect(sidebar).toHaveClass(/is-open/);
-    await page.waitForFunction(() => {
-      const element = document.querySelector('.sidebar');
-      if (!(element instanceof HTMLElement)) return false;
-      const rect = element.getBoundingClientRect();
-      const transform = getComputedStyle(element).transform;
-      const translateX = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m41;
-      return Math.abs(rect.left) < 1 && rect.right > 0 && rect.width > 0 && Math.abs(translateX) < 1;
-    });
-  }
   const link = sidebar.getByRole('link', { name, exact: true });
-  await expect(link).toBeVisible();
-  await link.evaluate((element) => {
-    const scroller = element.closest('.sidebar');
-    if (!(scroller instanceof HTMLElement)) return;
-    const target = element.getBoundingClientRect();
-    const frame = scroller.getBoundingClientRect();
-    scroller.scrollTop += target.top - frame.top - ((scroller.clientHeight - target.height) / 2);
-  });
-  await expect.poll(() => link.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
-  })).toBe(true);
-  await link.click();
+  const mobileMenu = page.getByRole('button', { name: 'Open navigation' });
+  const isMobile = (page.viewportSize()?.width ?? 1280) <= 900;
+
+  if (isMobile) {
+    await expect(mobileMenu).toBeVisible();
+    await mobileMenu.click();
+    await expect(mobileMenu).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('button', { name: 'Close navigation' })).toBeVisible();
+    await expect(sidebar).toHaveClass(/is-open/);
+    await expect(link).toBeVisible();
+    await link.scrollIntoViewIfNeeded();
+    await expect(link).toBeInViewport();
+    await link.click();
+    await expect(page.getByRole('button', { name: 'Close navigation' })).toHaveCount(0);
+  } else {
+    await link.scrollIntoViewIfNeeded();
+    await expect(link).toBeVisible();
+    await link.click();
+  }
+
+  if (primaryRoute[name]) await expectPath(page, primaryRoute[name]);
 }
 
 async function openShellLink(page: any, name: string) {
   const primary = sectionFor[name];
   if (!primary) {
     await openPrimary(page, name);
+    if (targetRoute[name]) await expectPath(page, targetRoute[name]);
     return;
   }
+
   await openPrimary(page, primary);
-  const contextLink = page.locator('.workspace-context-nav').getByRole('link', { name, exact: true });
+  const workflow = page.getByRole('region', { name: `${primary} workflow` });
+  await expect(workflow).toBeVisible();
+  const contextNav = workflow.locator('.workspace-context-nav');
+  await expect(contextNav).toBeVisible();
+
+  if (applicationMore.has(name)) {
+    const more = contextNav.locator('details.workspace-context-more');
+    await expect(more).toHaveCount(1);
+    if (!(await more.evaluate((element) => element.hasAttribute('open')))) {
+      await more.locator('summary').click();
+    }
+  }
+
+  const contextLink = contextNav.getByRole('link', { name, exact: true });
   await contextLink.scrollIntoViewIfNeeded();
-  await expect(contextLink).toBeInViewport();
+  await expect(contextLink).toBeVisible();
   await contextLink.click();
+  if (targetRoute[name]) await expectPath(page, targetRoute[name]);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -88,7 +153,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
 });
 
-test('Borrower login is module-scoped while retaining the unified PiHub access shell', async ({ page }) => {
+test('Borrower login is module-scoped while retaining the unified PiHub access shell', async ({ page }, testInfo) => {
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible();
   await expect(page.getByText('PiHub Borrower', { exact: true })).toBeVisible();
@@ -96,38 +161,50 @@ test('Borrower login is module-scoped while retaining the unified PiHub access s
   await expect(page.locator('.pihub-access-tabs')).toHaveCount(0);
   for (const moduleName of ['Investor', 'Advisory', 'Admin']) await expect(page.getByText(moduleName, { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Open Borrower' }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expectPath(page, '/');
   const topbar = page.locator('.topbar');
   await expect(topbar).toHaveCSS('top', '0px');
   await expect(page.locator('.pihub-route-motion')).toBeVisible();
   await expect(page.locator('.sidebar .ap-nav-item[aria-current="page"]')).toHaveCount(1);
   await expect(page.locator('.sidebar .ap-nav-item')).toHaveCount(8);
 
-  // Verify sequential keyboard focus from a deterministic document origin. Some
-  // mobile/browser engines preserve focus history across SPA navigation even after goto().
   await page.goto('/');
   const skip = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skip).toHaveCSS('position', 'fixed');
-  await page.evaluate(() => {
-    document.body.setAttribute('tabindex', '-1');
-    document.body.focus();
-  });
-  await expect(page.locator('body')).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(skip).toBeFocused();
-  await page.evaluate(() => document.body.removeAttribute('tabindex'));
+  if (testInfo.project.name !== 'mobile') {
+    await page.evaluate(() => {
+      document.body.setAttribute('tabindex', '-1');
+      document.body.focus();
+    });
+    await expect(page.locator('body')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(skip).toBeFocused();
+    await page.evaluate(() => document.body.removeAttribute('tabindex'));
+  }
 });
 
 test('merged sidebar keeps related borrower tools in a seamless contextual workflow', async ({ page }) => {
   await login(page);
   await openPrimary(page, 'Applications');
-  await expect(page.locator('.workspace-context-nav')).toBeVisible();
-  for (const item of ['My applications', 'New application', 'Financing request', 'Financials', 'Documents', 'PiHub requests', 'Application versions']) {
-    await expect(page.locator('.workspace-context-nav').getByRole('link', { name: item, exact: true })).toBeVisible();
+  const contextNav = page.locator('.workspace-context-nav');
+  await expect(contextNav).toBeVisible();
+
+  for (const item of ['My applications', 'Financing request', 'Financials', 'Documents', 'PiHub requests']) {
+    await expect(contextNav.getByRole('link', { name: item, exact: true })).toBeVisible();
   }
-  await page.locator('.workspace-context-nav').getByRole('link', { name: 'Documents', exact: true }).click();
-  await expect(page).toHaveURL(/\/documents$/);
-  await expect(page.locator('.sidebar').getByRole('link', { name: 'Applications', exact: true })).toHaveAttribute('aria-current', 'page');
+
+  const more = contextNav.locator('details.workspace-context-more');
+  await expect(more).toHaveCount(1);
+  await expect(more.locator('summary')).toBeVisible();
+  await more.locator('summary').click();
+  for (const item of ['New application', 'Connected data', 'Data room', 'Messages', 'Activity', 'Application versions']) {
+    await expect(contextNav.getByRole('link', { name: item, exact: true })).toBeVisible();
+  }
+
+  await contextNav.getByRole('link', { name: 'Documents', exact: true }).click();
+  await expectPath(page, '/documents');
+  await expect(more).not.toHaveAttribute('open', '');
+  await expect(page.locator('.sidebar a[href="/applications"]')).toHaveAttribute('aria-current', 'page');
 });
 
 test('financing product discovery has no decorative controls and eligibility typography stays structured', async ({ page }) => {

@@ -1,0 +1,353 @@
+/* PiHub Borrower whole-app UI audit hardening.
+   Loaded last so it repairs legacy geometry without creating another competing design system. */
+
+/* Keep every route and contextual workflow on one visual axis. */
+.pihub-route-motion,
+.route-stage,
+.route-stage > *,
+.page-head,
+.page-head > *,
+.card,
+.card-head,
+.card-head > *,
+.main-content.pihub-workspace {
+  min-width: 0;
+}
+
+.route-stage {
+  width: 100%;
+  /* GSAP owns route motion. The legacy CSS transform made fixed dialogs use
+     the route as their containing block during entry, clipping overlays. */
+  animation: none;
+}
+
+.workspace-context-shell,
+.sync-warning {
+  width: 100%;
+  max-width: var(--pihub-content-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.workspace-context-shell {
+  margin-bottom: var(--pihub-space-5);
+}
+
+.page-head h1,
+.page-head p,
+.card-head h2,
+.card-head p,
+.card strong,
+.card small,
+.card p {
+  overflow-wrap: anywhere;
+}
+
+.card-head > div:first-child {
+  min-width: 0;
+}
+
+.card-head > :last-child:not(:first-child),
+.page-head-action,
+.privacy-card > .button {
+  flex: 0 0 auto;
+}
+
+/* Toolbars and headers should wrap before they collide. */
+.toolbar-grid > *,
+.page-action-group > *,
+.form-actions > * {
+  min-width: 0;
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .pihub-environment-chip {
+    max-width: 230px;
+  }
+
+  .pihub-environment-copy small,
+  .pihub-topbar .save-pill {
+    display: none;
+  }
+
+  .pihub-topbar .global-search {
+    width: min(20vw, 190px);
+  }
+
+  .pihub-topbar .account-button {
+    min-width: 170px;
+  }
+}
+
+@media (max-width: 1040px) and (min-width: 901px) {
+  .pihub-topbar .global-search,
+  .pihub-topbar .language-switch {
+    display: none;
+  }
+
+  .pihub-topbar .account-button {
+    min-width: 158px;
+  }
+}
+
+/* Finance tables: header and row contracts must use the same number of columns. */
+.portfolio-table,
+.draw-table,
+.offer-impact-table,
+.simple-ledger,
+.team-table {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.portfolio-head,
+.portfolio-row {
+  grid-template-columns:
+    minmax(240px, 1.35fr)
+    120px
+    minmax(150px, .8fr)
+    minmax(260px, 1.1fr)
+    110px;
+  min-width: 980px;
+}
+
+.portfolio-row > .button {
+  width: 100%;
+}
+
+.draw-head,
+.draw-row {
+  display: grid;
+  grid-template-columns:
+    80px
+    minmax(150px, 1fr)
+    minmax(130px, .85fr)
+    minmax(130px, .75fr)
+    minmax(110px, .65fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 760px;
+  padding: 11px 12px;
+}
+
+.draw-head {
+  background: #f7f9fc;
+  color: #536078;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.draw-row {
+  border-top: 1px solid var(--pihub-border);
+  font-size: 11.5px;
+}
+
+.draw-row > .button {
+  width: 100%;
+}
+
+.offer-impact-table {
+  border: 1px solid var(--pihub-border);
+  border-radius: var(--pihub-radius-md);
+  overflow-x: auto;
+}
+
+.offer-impact-head,
+.offer-impact-row {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.5fr)
+    minmax(130px, .8fr)
+    minmax(170px, 1fr)
+    minmax(90px, .55fr)
+    minmax(90px, .55fr)
+    minmax(90px, .55fr)
+    minmax(118px, .65fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 980px;
+  padding: 11px 12px;
+}
+
+.offer-impact-head {
+  background: #f7f9fc;
+  color: #536078;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.offer-impact-row {
+  border-top: 1px solid var(--pihub-border);
+  border-bottom: 0;
+  font-size: 11.5px;
+}
+
+.offer-impact-row > span:first-child {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.offer-impact-row > span:first-child strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.offer-impact-row > .button {
+  width: 100%;
+  min-width: 0;
+}
+
+.simple-ledger .ledger-head,
+.simple-ledger .ledger-row {
+  min-width: 620px;
+}
+
+.team-table .data-head,
+.team-table .data-row {
+  min-width: 720px;
+  grid-template-columns: minmax(240px, 1fr) 160px 120px minmax(180px, auto);
+}
+
+.team-table .row-actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+/* Sidebar status must remain legible instead of folding into its description. */
+.pihub-system-line {
+  display: flex;
+  align-items: center;
+  gap: var(--pihub-space-2);
+  white-space: nowrap;
+}
+
+.pihub-system-line > span:last-child {
+  margin-left: auto;
+}
+
+.pihub-sidebar-foot small {
+  overflow-wrap: anywhere;
+}
+
+/* Dialogs must remain viewport-owned even when opened during route entry. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modal {
+  min-height: 0;
+  height: fit-content;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.modal-head > div {
+  min-width: 0;
+}
+
+.modal-head .icon-button {
+  flex: 0 0 40px;
+}
+
+/* Lists should never force the document wider than the workspace. */
+.privacy-card,
+.professional-row,
+.saved-view-row,
+.budget-list > div,
+.inspection-list > div,
+.draw-list > div,
+.freshness-list > div,
+.integration-list > div,
+.vault-list > div,
+.intelligence-list > div,
+.disclosure-list > div,
+.scenario-list > div,
+.counter-list > div,
+.envelope-list > div,
+.statement-list > div,
+.complaint-list > div,
+.forecast-list > div,
+.instruction-list > div {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  /* A translated drawer is still considered visible by browsers and test
+     tooling. Visibility/pointer state makes the closed rail genuinely inert. */
+  .sidebar.pihub-sidebar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .sidebar.pihub-sidebar.is-open {
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page-head-action,
+  .page-head-action .button,
+  .page-head-action .page-action-group {
+    width: 100%;
+  }
+
+  .page-action-group {
+    justify-content: stretch;
+  }
+
+  .page-action-group .button {
+    flex: 1 1 180px;
+  }
+
+  .modal-backdrop {
+    align-items: start;
+    padding: 12px;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: var(--pihub-space-4);
+  }
+}
+
+@media (max-width: 520px) {
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+
+  .privacy-card,
+  .professional-row {
+    align-items: stretch;
+  }
+}

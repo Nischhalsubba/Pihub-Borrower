@@ -30,7 +30,7 @@ test('Data Room offers explicit reusable-document linking', () => {
   assert.match(page, /Reuse in application/);
   assert.match(page, /Used in this application/);
   assert.match(context, /reuseVaultItem/);
-  assert.match(api, /credentials: 'include'/);
+  assert.match(api, /credentials\s*:\s*'include'/);
   assert.doesNotMatch(api, /localStorage/i);
 });
 
@@ -38,5 +38,5 @@ test('platform-api delegates vault reuse using the verified caller id', () => {
   const edge = read('supabase/functions/platform-api/index.ts');
   assert.match(edge, /\/borrower\\\/vault/);
   assert.match(edge, /pihub_borrower_reuse_vault_item/);
-  assert.match(edge, /caller_user_id: user\.id/);
+  assert.match(edge, /caller_user_id\s*:\s*user\.id/);
 });
