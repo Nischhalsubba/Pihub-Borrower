@@ -6,13 +6,14 @@ import { join } from 'node:path';
 const root = new URL('../', import.meta.url).pathname;
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
-test('production Vercel uses the same-origin authenticated PiHub BFF', () => {
+test('Vercel keeps the BFF available without implicitly forcing API runtime', () => {
   const runtime = read('src/services/runtime.ts');
   const vite = read('vite.config.ts');
   const vercel = read('vercel.json');
   const bff = read('api/platform.ts');
   assert.match(runtime, /Empty base URL is intentional/);
-  assert.match(vite, /process\.env\.VERCEL === '1' \? 'api' : 'demo'/);
+  assert.match(vite, /process\.env\.VITE_PIHUB_RUNTIME \?\? 'demo'/);
+  assert.doesNotMatch(vite, /process\.env\.VERCEL === '1'/);
   assert.match(vercel, /\/api\/v1\/:path\*/);
   assert.match(bff, /__Host-pihub_at/);
   assert.match(bff, /HttpOnly; Secure; SameSite=Lax/);

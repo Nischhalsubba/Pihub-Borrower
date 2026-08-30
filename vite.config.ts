@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(() => {
-  const runtime = process.env.VITE_PIHUB_RUNTIME ?? (process.env.VERCEL === '1' ? 'api' : 'demo');
+  // Hosted demos stay in demo mode unless API runtime is explicitly enabled.
+  const runtime = process.env.VITE_PIHUB_RUNTIME ?? 'demo';
   return {
     plugins: [react()],
     define: {
