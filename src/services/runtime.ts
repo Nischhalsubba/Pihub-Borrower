@@ -9,5 +9,6 @@ export function apiBaseUrl(): string {
 }
 
 export function isApiRuntime(): boolean {
-  return runtimeMode() === 'api' && Boolean(apiBaseUrl());
+  // Empty base URL is intentional for the production same-origin BFF.
+  return runtimeMode() === 'api';
 }
