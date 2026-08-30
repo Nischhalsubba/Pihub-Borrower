@@ -92,6 +92,8 @@ test('finance tables keep headers, rows and actions on the same grid contract', 
   await login(page);
 
   await page.goto('/scenario-lab');
+  await expect(page.locator('.offer-impact-head')).toBeVisible();
+  await expect(page.locator('.offer-impact-row').first()).toBeVisible();
   const offer = await page.evaluate(() => {
     const head = document.querySelector('.offer-impact-head') as HTMLElement | null;
     const row = document.querySelector('.offer-impact-row') as HTMLElement | null;
@@ -108,6 +110,8 @@ test('finance tables keep headers, rows and actions on the same grid contract', 
   expect(offer.rowGrid).toBe(offer.headGrid);
 
   await page.goto('/portfolio');
+  await expect(page.locator('.portfolio-head')).toBeVisible();
+  await expect(page.locator('.portfolio-row').first()).toBeVisible();
   const portfolio = await page.evaluate(() => {
     const head = document.querySelector('.portfolio-head') as HTMLElement | null;
     const row = document.querySelector('.portfolio-row') as HTMLElement | null;
@@ -123,8 +127,10 @@ test('finance tables keep headers, rows and actions on the same grid contract', 
   expect(portfolio.rowGrid).toBe(portfolio.headGrid);
 
   await page.goto('/capital');
+  await expect(page.getByRole('heading', { name: /Draws|Capital/i }).first()).toBeVisible();
   const draw = await page.locator('.draw-table').count();
   if (draw) {
+    await expect(page.locator('.draw-head')).toBeVisible();
     const contract = await page.evaluate(() => {
       const head = document.querySelector('.draw-head') as HTMLElement | null;
       const row = document.querySelector('.draw-row') as HTMLElement | null;
@@ -149,18 +155,37 @@ test('dialogs stay inside the viewport and servicing does not duplicate sections
   await login(page);
 
   await page.goto('/privacy');
+  await expect(page.getByRole('heading', { name: 'Privacy & data rights' })).toBeVisible();
   await page.getByRole('button', { name: 'Create request' }).first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   const dialogGeometry = await dialog.evaluate((element) => {
     const r = element.getBoundingClientRect();
     const style = getComputedStyle(element);
-    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, overflowY: style.overflowY };
+    const backdrop = element.parentElement?.getBoundingClientRect();
+    return {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      top: r.top,
+      bottom: r.bottom,
+      left: r.left,
+      right: r.right,
+      maxHeight: style.maxHeight,
+      overflowY: style.overflowY,
+      backdropTop: backdrop?.top ?? null,
+      backdropLeft: backdrop?.left ?? null,
+      backdropRight: backdrop?.right ?? null,
+      backdropBottom: backdrop?.bottom ?? null
+    };
   });
+  expect(dialogGeometry.backdropTop).toBeLessThanOrEqual(1);
+  expect(dialogGeometry.backdropLeft).toBeLessThanOrEqual(1);
+  expect(dialogGeometry.backdropRight).toBeGreaterThanOrEqual(dialogGeometry.innerWidth - 1);
+  expect(dialogGeometry.backdropBottom).toBeGreaterThanOrEqual(dialogGeometry.innerHeight - 1);
   expect(dialogGeometry.top).toBeGreaterThanOrEqual(0);
-  expect(dialogGeometry.bottom).toBeLessThanOrEqual(768);
+  expect(dialogGeometry.bottom).toBeLessThanOrEqual(dialogGeometry.innerHeight + 1);
   expect(dialogGeometry.left).toBeGreaterThanOrEqual(0);
-  expect(dialogGeometry.right).toBeLessThanOrEqual(1366);
+  expect(dialogGeometry.right).toBeLessThanOrEqual(dialogGeometry.innerWidth + 1);
   expect(['auto', 'scroll']).toContain(dialogGeometry.overflowY);
   await page.getByRole('button', { name: 'Close' }).click();
 
