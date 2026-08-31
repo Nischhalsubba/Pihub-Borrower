@@ -8,6 +8,7 @@ import '../packages/ui/src/pihub-shell.css';
 import '../packages/ui/src/pihub-auth.css';
 import '../packages/ui/src/pihub-motion.css';
 import '../packages/ui/src/pihub-onboarding.css';
+import '../packages/ui/src/pihub-tour-overlay.css';
 import '../packages/ui/src/pihub-audit.css';
 import { initMonitoring } from './services/monitoring';
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Icon, type IconName } from '../components/Icons';
@@ -7,6 +7,7 @@ import type { PlatformWorkflowState } from '../platform/types';
 import { useBorrowerStore } from '../state/store';
 
 type Placement = 'auto' | 'right' | 'bottom' | 'left' | 'top';
+type ResolvedPlacement = Exclude<Placement, 'auto'>;
 
 type TourStep = {
   label: string;
@@ -27,6 +28,11 @@ type SpotlightRect = {
   bottom: number;
   width: number;
   height: number;
+};
+
+type CalloutGeometry = {
+  style: React.CSSProperties;
+  placement: ResolvedPlacement;
 };
 
 const workflowLabels: Record<PlatformWorkflowState, string> = {
@@ -66,16 +72,18 @@ function paddedRect(rect: DOMRect): SpotlightRect {
   return { top, left, right, bottom, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
 }
 
-function tooltipStyle(rect: SpotlightRect | null, placement: Placement = 'auto'): React.CSSProperties {
-  if (typeof window === 'undefined') return {};
+function calloutGeometry(rect: SpotlightRect | null, preferred: Placement = 'auto'): CalloutGeometry {
+  if (typeof window === 'undefined') return { style: {}, placement: 'bottom' };
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const edge = 16;
-  const gap = 18;
-  const width = Math.min(410, viewportWidth - edge * 2);
-  const estimatedHeight = 390;
+  const gap = 30;
+  const width = Math.min(330, viewportWidth - edge * 2);
+  const estimatedHeight = 285;
 
-  if (!rect || viewportWidth < 760) return { left: edge, right: edge, bottom: edge, width: 'auto' };
+  if (!rect || viewportWidth < 760) {
+    return { style: { left: edge, right: edge, bottom: edge, width: 'auto' }, placement: 'bottom' };
+  }
 
   const clampTop = (value: number) => Math.max(edge, Math.min(value, viewportHeight - estimatedHeight - edge));
   const clampLeft = (value: number) => Math.max(edge, Math.min(value, viewportWidth - width - edge));
@@ -84,15 +92,55 @@ function tooltipStyle(rect: SpotlightRect | null, placement: Placement = 'auto')
   const bottomFits = rect.bottom + gap + estimatedHeight <= viewportHeight - edge;
   const topFits = rect.top - gap - estimatedHeight >= edge;
 
-  if (placement === 'right' && rightFits) return { width, left: rect.right + gap, top: clampTop(rect.top) };
-  if (placement === 'left' && leftFits) return { width, left: rect.left - gap - width, top: clampTop(rect.top) };
-  if (placement === 'bottom' && bottomFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.bottom + gap };
-  if (placement === 'top' && topFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.top - gap - estimatedHeight };
-  if (rightFits) return { width, left: rect.right + gap, top: clampTop(rect.top) };
-  if (leftFits) return { width, left: rect.left - gap - width, top: clampTop(rect.top) };
-  if (bottomFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.bottom + gap };
-  if (topFits) return { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.top - gap - estimatedHeight };
-  return { width, left: viewportWidth - width - edge, top: edge };
+  const right = (): CalloutGeometry => ({ style: { width, left: rect.right + gap, top: clampTop(rect.top + rect.height / 2 - estimatedHeight / 2) }, placement: 'right' });
+  const left = (): CalloutGeometry => ({ style: { width, left: rect.left - gap - width, top: clampTop(rect.top + rect.height / 2 - estimatedHeight / 2) }, placement: 'left' });
+  const bottom = (): CalloutGeometry => ({ style: { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.bottom + gap }, placement: 'bottom' });
+  const top = (): CalloutGeometry => ({ style: { width, left: clampLeft(rect.left + rect.width / 2 - width / 2), top: rect.top - gap - estimatedHeight }, placement: 'top' });
+
+  if (preferred === 'right' && rightFits) return right();
+  if (preferred === 'left' && leftFits) return left();
+  if (preferred === 'bottom' && bottomFits) return bottom();
+  if (preferred === 'top' && topFits) return top();
+  if (rightFits) return right();
+  if (leftFits) return left();
+  if (bottomFits) return bottom();
+  if (topFits) return top();
+  return { style: { width, right: edge, top: edge }, placement: 'right' };
+}
+
+function connectorPath(target: SpotlightRect | null, callout: DOMRect | null, placement: ResolvedPlacement): string {
+  if (!target || !callout || typeof window === 'undefined' || window.innerWidth < 760) return '';
+  const tx = target.left + target.width / 2;
+  const ty = target.top + target.height / 2;
+  let sx = callout.left + callout.width / 2;
+  let sy = callout.top + callout.height / 2;
+  let ex = tx;
+  let ey = ty;
+
+  if (placement === 'right') {
+    sx = callout.left;
+    sy = Math.max(callout.top + 18, Math.min(ty, callout.bottom - 18));
+    ex = target.right;
+  } else if (placement === 'left') {
+    sx = callout.right;
+    sy = Math.max(callout.top + 18, Math.min(ty, callout.bottom - 18));
+    ex = target.left;
+  } else if (placement === 'bottom') {
+    sx = Math.max(callout.left + 18, Math.min(tx, callout.right - 18));
+    sy = callout.top;
+    ey = target.bottom;
+  } else {
+    sx = Math.max(callout.left + 18, Math.min(tx, callout.right - 18));
+    sy = callout.bottom;
+    ey = target.top;
+  }
+
+  if (placement === 'left' || placement === 'right') {
+    const midX = (sx + ex) / 2;
+    return `M ${sx} ${sy} C ${midX} ${sy}, ${midX} ${ey}, ${ex} ${ey}`;
+  }
+  const midY = (sy + ey) / 2;
+  return `M ${sx} ${sy} C ${sx} ${midY}, ${ex} ${midY}, ${ex} ${ey}`;
 }
 
 export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) {
@@ -105,6 +153,7 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
   const targetRef = useRef<HTMLElement | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<SpotlightRect | null>(null);
+  const [calloutRect, setCalloutRect] = useState<DOMRect | null>(null);
   const fullName = auth.user?.name?.trim() || state.profile.name;
   const firstName = fullName.split(/\s+/)[0] || 'there';
   const greeting = useMemo(() => greetingForHour(new Date().getHours()), []);
@@ -113,8 +162,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Welcome',
       title: `${greeting}, ${firstName}`,
-      body: `You are signed in as ${fullName} for ${state.organization.name}. This tour stays on top of the real PiHub workspace, highlights exactly what matters, and moves between pages as the workflow changes.`,
-      bullets: [`Current financing workspace: ${app.name}`, 'Nothing in this tour changes your application or deal data.'],
+      body: `You are signed in as ${fullName} for ${state.organization.name}. This walkthrough stays on the real PiHub workspace and points directly at the controls you are learning.`,
+      bullets: [`Current financing workspace: ${app.name}`, 'Nothing in this walkthrough changes your application or deal data.'],
       route: '/',
       selectors: ['.account-button'],
       icon: 'account',
@@ -123,7 +172,7 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Navigate',
       title: 'Use the workspace navigation as your map',
-      body: 'The left navigation is organized by the borrower journey rather than by internal PiHub teams. Each section opens the tools needed for that stage of the financing lifecycle.',
+      body: 'The left navigation follows the borrower journey instead of internal PiHub teams.',
       bullets: ['Overview shows the next action.', 'Financing, Applications, Execution, Servicing and Organization follow the deal from discovery through post-funding management.'],
       route: '/',
       selectors: ['#borrower-navigation', '.mobile-menu'],
@@ -133,8 +182,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Next action',
       title: 'Start with the one thing that moves the deal forward',
-      body: 'The priority strip turns all of the underlying workflow state into one borrower action. It may point to a PiHub request, an approval blocker, a missing section or submission readiness.',
-      bullets: ['Open the highlighted action before browsing the rest of the dashboard.', 'The KPI cards below it give context, but this strip tells you what to do next.'],
+      body: 'The priority strip turns the underlying workflow state into one borrower action.',
+      bullets: ['Open this action before browsing the rest of the dashboard.', 'The KPI cards provide context, while this strip tells you what to do next.'],
       route: '/',
       selectors: ['.priority-strip'],
       icon: 'activity',
@@ -143,8 +192,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Financing',
       title: 'Choose the financing path before building the full application',
-      body: 'PiHub takes you to the real Financing workspace here. Use products to understand structures and requirements, then use pre-qualification to check readiness against the deal data you already have.',
-      bullets: ['Product requirements feed the application checklist.', 'Pre-qualification should explain why the deal is or is not ready rather than returning a mysterious score.'],
+      body: 'Products explain financing structures and requirements. Pre-qualification checks readiness against the deal information already in PiHub.',
+      bullets: ['Product requirements feed the application checklist.', 'Readiness should explain why the deal is or is not ready.'],
       route: '/products',
       selectors: ['.workspace-context-shell', '.page-head'],
       icon: 'products',
@@ -153,8 +202,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Applications',
       title: 'One application is the canonical borrower record',
-      body: 'Applications keeps the financing request, company, project, financials, connected data, documents, requests and messages tied to one application ID instead of forcing you to repeat the same information in separate systems.',
-      bullets: ['Use the section navigation to move through the application without losing context.', 'Version history preserves prior submitted states instead of silently overwriting them.'],
+      body: 'Your financing request, company, project, financials, documents, requests and messages stay tied to one application ID.',
+      bullets: ['Use the section navigation without losing application context.', 'Version history preserves prior submitted states.'],
       route: '/application',
       selectors: ['.workspace-context-shell', '.page-head'],
       icon: 'applications',
@@ -163,8 +212,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Execution',
       title: 'Move from analysis into negotiation and closing',
-      body: 'Execution contains scenario analysis, negotiation, terms and closing, construction draws and calendar actions. PiHub keeps these decisions attached to the same deal rather than creating disconnected spreadsheets and message threads.',
-      bullets: ['Scenario changes remain borrower-side until you deliberately save or act on them.', 'Accepted terms and closing actions become controlled cross-module events.'],
+      body: 'Execution contains scenario analysis, negotiation, terms, closing, construction draws and calendar actions on the same deal.',
+      bullets: ['Scenario changes remain borrower-side until deliberately saved or acted on.', 'Accepted terms and closing actions become controlled cross-module events.'],
       route: '/scenario-lab',
       selectors: ['.workspace-context-shell', '.page-head'],
       icon: 'chart',
@@ -173,7 +222,7 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'PiHub modules',
       title: 'This is how the other PiHub modules connect to your deal',
-      body: 'The financing timeline is the borrower-safe projection of one shared deal. Your actions create controlled handoffs; you do not need to re-enter the application in Advisory, Admin/Compliance or Investor.',
+      body: 'The financing timeline is the borrower-safe view of one shared deal. You do not re-enter the application in Advisory, Admin/Compliance or Investor.',
       bullets: ['Borrower owns inputs, documents, responses, consent and borrower decisions.', 'Internal underwriting, investment committee and compliance notes remain private even though the workflow state is synchronized.'],
       route: '/',
       selectors: ['.overview-timeline-card'],
@@ -184,8 +233,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Servicing',
       title: 'PiHub continues after funding',
-      body: 'Once a facility is funded, Servicing becomes the home for borrower-visible facility terms, payments, statements, reporting, covenants, draws, refinance or payoff requests and sustainability obligations.',
-      bullets: ['Portfolio consolidates multiple facilities.', 'Ongoing evidence remains attached to the funded facility and canonical organization record.'],
+      body: 'Servicing becomes the borrower home for facility terms, payments, statements, reporting, covenants, draws and payoff or refinance requests.',
+      bullets: ['Portfolio consolidates multiple facilities.', 'Ongoing evidence remains attached to the funded facility and organization record.'],
       route: '/servicing',
       selectors: ['.workspace-context-shell', '.page-head'],
       icon: 'activity',
@@ -194,8 +243,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Organization',
       title: 'People, consent and governance are part of the workflow',
-      body: 'Organization controls who can work on the deal and how information may be shared. Privacy requests and complaints create formal Admin/Compliance handoffs rather than disappearing into an inbox.',
-      bullets: ['Manage borrower-side collaborators and external professionals here.', 'Disclosures and consent make authorized sharing explicit and revocable.'],
+      body: 'Organization controls who can work on the deal and how borrower information may be shared.',
+      bullets: ['Manage borrower-side collaborators and external professionals here.', 'Privacy requests and complaints create formal Admin/Compliance handoffs.'],
       route: '/team',
       selectors: ['.workspace-context-shell', '.page-head'],
       icon: 'team',
@@ -204,8 +253,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Workspace tools',
       title: 'Search, notifications and your account stay available everywhere',
-      body: 'The top bar is global. Search can jump to pages and borrower records, notifications surface work that needs attention, and the account menu gives quick access to organization, privacy and sign-out controls.',
-      bullets: ['Use global search instead of manually hunting through sections.', 'Notifications are borrower-facing signals, not a substitute for the canonical request or application record.'],
+      body: 'The top bar is global. Search jumps to pages and records, notifications surface work, and the account menu exposes user controls.',
+      bullets: ['Use global search instead of hunting through sections.', 'Notifications point you back to the canonical request or application record.'],
       route: '/',
       selectors: ['.topbar-actions', '.notification-button'],
       icon: 'search',
@@ -214,8 +263,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     {
       label: 'Help & Copilot',
       title: 'Guidance is always available, and this tour can be replayed',
-      body: 'Borrower Copilot can explain the workspace using borrower-authorized context. Help contains plain-language guidance, support requests and the control to replay this walkthrough whenever somebody new joins the team.',
-      bullets: ['Copilot must not expose private underwriting or internal compliance notes.', 'Open guided tour from Help whenever you want this same spotlight walkthrough again.'],
+      body: 'Borrower Copilot explains the workspace using borrower-authorized context. Help contains support guidance and the control to replay this walkthrough.',
+      bullets: ['Copilot must not expose private underwriting or internal compliance notes.', 'Open guided tour from Help whenever somebody new joins the team.'],
       route: '/help',
       selectors: ['.help-tour-card', '.page-head'],
       icon: 'help',
@@ -225,10 +274,13 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
 
   const step = steps[stepIndex];
   const progress = Math.round(((stepIndex + 1) / steps.length) * 100);
+  const geometry = calloutGeometry(targetRect, step.placement);
+  const path = connectorPath(targetRect, calloutRect, geometry.placement);
 
   useEffect(() => {
     if (location.pathname !== step.route) {
       setTargetRect(null);
+      setCalloutRect(null);
       navigate(step.route, { replace: true });
       return;
     }
@@ -277,6 +329,25 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     };
   }, [location.pathname, navigate, step.route, step.selectors]);
 
+  useLayoutEffect(() => {
+    const node = cardRef.current;
+    if (!node) return;
+    let frame = 0;
+    const measure = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => setCalloutRect(node.getBoundingClientRect()));
+    };
+    measure();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    observer?.observe(node);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [geometry.placement, location.pathname, stepIndex, targetRect]);
+
   useEffect(() => {
     cardRef.current?.focus({ preventScroll: true });
   }, [stepIndex, location.pathname]);
@@ -296,7 +367,6 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
     else setStepIndex((current) => current + 1);
   };
   const back = () => setStepIndex((current) => Math.max(0, current - 1));
-  const style = tooltipStyle(targetRect, step.placement);
   const modules = [
     { id: 'borrower' as const, label: 'Borrower', detail: 'Inputs & decisions' },
     { id: 'advisory' as const, label: 'Advisory', detail: 'Structuring & diligence' },
@@ -313,16 +383,23 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
       <div className="product-tour-spotlight" aria-hidden="true" style={{ top: targetRect.top, left: targetRect.left, width: targetRect.width, height: targetRect.height }}/>
     </> : <div className="product-tour-mask product-tour-mask-full" aria-hidden="true"/>}
 
-    <div ref={cardRef} className="product-tour-card" style={style} role="dialog" aria-modal="true" aria-labelledby="product-tour-title" tabIndex={-1}>
+    {path && <svg className="product-tour-connector" aria-hidden="true" viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`} preserveAspectRatio="none">
+      <defs><marker id="product-tour-arrowhead" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></marker></defs>
+      <path className="product-tour-connector-halo" d={path}/>
+      <path className="product-tour-connector-line" d={path} markerEnd="url(#product-tour-arrowhead)"/>
+    </svg>}
+
+    <button type="button" className="product-tour-exit" onClick={onComplete} aria-label="Skip guided tour"><Icon name="x" size={25}/></button>
+
+    <div ref={cardRef} className="product-tour-card product-tour-annotation" data-placement={geometry.placement} style={geometry.style} role="dialog" aria-modal="true" aria-labelledby="product-tour-title" tabIndex={-1}>
       <div className="product-tour-card-head">
-        <span className="product-tour-icon"><Icon name={step.icon} size={19}/></span>
+        <span className="product-tour-icon"><Icon name={step.icon} size={17}/></span>
         <div><span>{step.label}</span><small>Step {stepIndex + 1} of {steps.length}</small></div>
-        <button type="button" className="product-tour-close" onClick={onComplete} aria-label="Skip guided tour">×</button>
       </div>
       <div className="product-tour-progress" role="progressbar" aria-label="Guided tour progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }}/></div>
       <h2 id="product-tour-title">{step.title}</h2>
       <p className="product-tour-body">{step.body}</p>
-      <ul className="product-tour-points">{step.bullets.map((bullet) => <li key={bullet}><Icon name="check" size={13}/><span>{bullet}</span></li>)}</ul>
+      <ul className="product-tour-points">{step.bullets.map((bullet) => <li key={bullet}><Icon name="check" size={12}/><span>{bullet}</span></li>)}</ul>
 
       {step.moduleFlow && <div className="product-tour-module-flow" aria-label="PiHub module handoff flow">{modules.map((module, index) => {
         const stateItem = projection?.moduleStates.find((item) => item.module === module.id);
@@ -332,10 +409,8 @@ export function BorrowerProductTour({ onComplete }: { onComplete: () => void }) 
       <div className="product-tour-actions">
         <button type="button" className="button secondary" onClick={back} disabled={stepIndex === 0}>Back</button>
         <button type="button" className="product-tour-skip" onClick={onComplete}>Skip tour</button>
-        <button type="button" className="button primary" onClick={next}>{stepIndex === steps.length - 1 ? 'Finish tour' : `Next: ${steps[stepIndex + 1].label}`}<Icon name="chevron" size={13}/></button>
+        <button type="button" className="button primary" onClick={next}>{stepIndex === steps.length - 1 ? 'Finish tour' : `Next: ${steps[stepIndex + 1].label}`}<Icon name="chevron" size={12}/></button>
       </div>
     </div>
   </div>;
 }
-
-export const OnboardingPage = BorrowerProductTour;

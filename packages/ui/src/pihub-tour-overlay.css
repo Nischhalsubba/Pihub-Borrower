@@ -1,0 +1,249 @@
+/* Screenshot-style PiHub walkthrough overlay.
+   This layer intentionally turns the existing coachmark into a compact annotation
+   over the real workspace rather than a page-sized onboarding surface. */
+
+.product-tour {
+  z-index: 2600;
+}
+
+.product-tour-mask {
+  z-index: 2600;
+  background: rgb(17 24 39 / .58);
+  backdrop-filter: none;
+}
+
+.product-tour-spotlight {
+  z-index: 2601;
+  border: 2px solid rgb(255 255 255 / .96);
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px rgb(49 95 232 / .72), 0 10px 28px rgb(2 8 23 / .28);
+  background: rgb(255 255 255 / .035);
+}
+
+.product-tour-connector {
+  position: fixed;
+  inset: 0;
+  z-index: 2602;
+  width: 100vw;
+  height: 100vh;
+  overflow: visible;
+  color: #101828;
+  pointer-events: none;
+}
+
+.product-tour-connector-halo,
+.product-tour-connector-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.product-tour-connector-halo {
+  stroke: rgb(255 255 255 / .72);
+  stroke-width: 5.5;
+}
+
+.product-tour-connector-line {
+  stroke: currentColor;
+  stroke-width: 2.1;
+}
+
+.product-tour-card.product-tour-annotation {
+  z-index: 2603;
+  width: min(330px, calc(100vw - 32px));
+  max-height: min(56dvh, 430px);
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgb(15 23 42 / .18);
+  border-radius: 5px;
+  background: rgb(255 255 255 / .985);
+  color: #182230;
+  box-shadow: 0 8px 24px rgb(2 8 23 / .18);
+  overflow: auto;
+}
+
+.product-tour-card.product-tour-annotation:focus-visible {
+  box-shadow: 0 8px 24px rgb(2 8 23 / .18), 0 0 0 3px rgb(255 255 255 / .55);
+}
+
+.product-tour-annotation .product-tour-card-head {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.product-tour-annotation .product-tour-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #eef3ff;
+  color: #285de9;
+}
+
+.product-tour-annotation .product-tour-card-head > div {
+  gap: 0;
+}
+
+.product-tour-annotation .product-tour-card-head > div > span {
+  color: #344054;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+}
+
+.product-tour-annotation .product-tour-card-head small {
+  color: #667085;
+  font-size: 9.5px;
+}
+
+.product-tour-annotation .product-tour-progress {
+  height: 3px;
+  border-radius: 999px;
+  background: #e8ecf2;
+}
+
+.product-tour-annotation .product-tour-progress span {
+  background: #315fe8;
+}
+
+.product-tour-card.product-tour-annotation h2 {
+  margin: 1px 0 0;
+  color: #101828;
+  font-size: 14px;
+  line-height: 1.32;
+  letter-spacing: -.012em;
+}
+
+.product-tour-annotation .product-tour-body {
+  margin: 0;
+  color: #475467;
+  font-size: 11.5px;
+  line-height: 1.52;
+}
+
+.product-tour-annotation .product-tour-points {
+  gap: 5px;
+}
+
+.product-tour-annotation .product-tour-points li {
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #344054;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.product-tour-annotation .product-tour-points li svg {
+  margin-top: 1px;
+  color: #19764c;
+}
+
+.product-tour-annotation .product-tour-module-flow {
+  gap: 4px;
+  padding: 6px;
+  border-color: #e1e7ef;
+  border-radius: 6px;
+  background: #f7f9fc;
+}
+
+.product-tour-annotation .product-tour-module-row {
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 5px;
+}
+
+.product-tour-annotation .product-tour-module-row > span {
+  width: 20px;
+  height: 20px;
+  font-size: 8px;
+}
+
+.product-tour-annotation .product-tour-module-row strong {
+  font-size: 9.8px;
+}
+
+.product-tour-annotation .product-tour-module-row small,
+.product-tour-annotation .product-tour-module-row em {
+  font-size: 8.5px;
+}
+
+.product-tour-annotation .product-tour-module-row em {
+  padding: 3px 5px;
+}
+
+.product-tour-annotation .product-tour-actions {
+  grid-template-columns: auto minmax(58px, 1fr) auto;
+  gap: 6px;
+  padding-top: 3px;
+}
+
+.product-tour-annotation .product-tour-actions .button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 9.5px;
+}
+
+.product-tour-annotation .product-tour-skip {
+  font-size: 9.5px;
+}
+
+.product-tour-exit {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 2604;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / .76);
+  color: #111827;
+  box-shadow: 0 2px 12px rgb(2 8 23 / .15);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.product-tour-exit:hover {
+  background: #fff;
+}
+
+@media (max-width: 760px) {
+  .product-tour-connector {
+    display: none;
+  }
+
+  .product-tour-card.product-tour-annotation {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    top: auto !important;
+    width: auto !important;
+    max-height: min(58dvh, 440px);
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .product-tour-annotation .product-tour-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .product-tour-annotation .product-tour-skip {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-tour-spotlight,
+  .product-tour-progress span {
+    transition: none;
+  }
+}
