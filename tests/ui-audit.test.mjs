@@ -42,6 +42,7 @@ test('overview financing timeline uses a readable scoped typography hierarchy', 
 test('first-login onboarding is a persistent cross-route spotlight overlay', () => {
   assert.match(app, /<OnboardingGate\/>/);
   assert.doesNotMatch(overview, /OnboardingPage/);
+  assert.match(onboardingGate, /auth\.mode === 'demo'/);
   assert.match(onboardingGate, /hasCompletedBorrowerOnboarding\(auth\.user\?\.id\)/);
   assert.match(onboardingGate, /markBorrowerOnboardingComplete\(auth\.user\?\.id\)/);
   assert.match(onboardingGate, /get\('tour'\) === '1'/);

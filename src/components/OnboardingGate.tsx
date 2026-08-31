@@ -17,7 +17,10 @@ export function OnboardingGate() {
   const navigate = useNavigate();
   const replayRequested = new URLSearchParams(location.search).get('tour') === '1';
   const automaticTourDisabled = (import.meta.env as { VITE_DISABLE_AUTO_TOUR?: string }).VITE_DISABLE_AUTO_TOUR === 'true';
-  const [open, setOpen] = useState(() => replayRequested || (!automaticTourDisabled && !hasCompletedBorrowerOnboarding(auth.user?.id)));
+  // The public demo is a repeatable walkthrough environment. A fresh demo login should
+  // always present the tour, while real API users retain per-version completion state.
+  const shouldAutoOpen = !automaticTourDisabled && (auth.mode === 'demo' || !hasCompletedBorrowerOnboarding(auth.user?.id));
+  const [open, setOpen] = useState(() => replayRequested || shouldAutoOpen);
   const returnPathRef = useRef(withoutTourQuery(location.pathname, location.search));
   const previousReplayRef = useRef(replayRequested);
 
