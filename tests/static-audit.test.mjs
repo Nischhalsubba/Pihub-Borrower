@@ -86,9 +86,14 @@ test('production authentication uses an HttpOnly-session API boundary instead of
 
 test('finance workflows use bounded GSAP motion without decorative WebGL or continuous animation loops', () => {
   const pkg = readFileSync(join(root, 'package.json'), 'utf8');
+  const tour = readFileSync(join(root, 'src/pages/OnboardingPage.tsx'), 'utf8');
+  const nonTourSource = source.replace(tour, '');
   assert.match(pkg, /"gsap": "\^3\.13\.0"/i);
   assert.doesNotMatch(pkg, /"three"|"@react-three/i);
-  assert.doesNotMatch(source, /<canvas|WebGLRenderer|requestAnimationFrame\(/i);
+  assert.doesNotMatch(nonTourSource, /<canvas|WebGLRenderer|requestAnimationFrame\(/i);
+  assert.doesNotMatch(tour, /<canvas|WebGLRenderer/i);
+  assert.equal((tour.match(/requestAnimationFrame\(/g) ?? []).length, 1, 'The tour may schedule only one bounded measurement frame at a time');
+  assert.match(tour, /cancelAnimationFrame\(frame\)/);
   const css = readFileSync(join(root, 'src/styles.css'), 'utf8');
   assert.match(css, /prefers-reduced-motion/);
 });
