@@ -1,0 +1,53 @@
+name: One-time BFF trust boundary hardening
+
+on:
+  push:
+    branches:
+      - security/production-only-bff-trust
+    paths:
+      - '.github/workflows/patch-bff-trust-boundary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out hardening branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: security/production-only-bff-trust
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Narrow Vercel environment trust
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('supabase/functions/platform-api/index.ts')
+          source = path.read_text(encoding='utf-8')
+          old = "payload.owner===TEAM_SLUG&&payload.project===VERCEL_PROJECT&&['production','preview'].includes(String(payload.environment??''))"
+          new = "payload.owner===TEAM_SLUG&&payload.project===VERCEL_PROJECT&&new Set((Deno.env.get('PIHUB_TRUSTED_VERCEL_ENVIRONMENTS')??'production').split(',').map(value=>value.trim()).filter(Boolean)).has(String(payload.environment??''))"
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected exactly one legacy BFF environment trust expression, found {source.count(old)}')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+      - name: Install locked dependencies
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - name: Run unit and security regression tests
+        run: npm test
+      - name: Remove one-time workflow and commit verified fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/patch-bff-trust-boundary.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/functions/platform-api/index.ts tests/bff-trust-boundary.test.mjs .github/workflows/patch-bff-trust-boundary.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'security: restrict trusted BFF environments by default'
+          git push origin HEAD:security/production-only-bff-trust
