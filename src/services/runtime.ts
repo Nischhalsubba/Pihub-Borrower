@@ -24,7 +24,7 @@ function isLoopbackHttpUrl(value: string): boolean {
 export function apiBaseUrl(): string {
   const value = String(import.meta.env.VITE_PIHUB_API_BASE_URL ?? '').trim().replace(/\/$/, '');
 
-  // Empty is valid for the same-origin production BFF (/api/v1/*).
+  // Empty base URL is intentional for the same-origin production BFF (/api/v1/*).
   if (!value) return '';
   if (/^https:\/\//i.test(value) || isLoopbackHttpUrl(value)) return value;
 
