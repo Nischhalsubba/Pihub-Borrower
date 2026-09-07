@@ -148,7 +148,7 @@ Deno.serve(async (request) => {
     provider_payload_sha256: payloadHash,
     provider_recipients: recipients,
     provider_completed_at: completedAt,
-    provider_expires_at: providerExpiresAt,
+    provider_expiration_at: providerExpiresAt,
   });
 
   if (error) {
