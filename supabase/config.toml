@@ -1,0 +1,4 @@
+project_id = "pihub-borrower"
+
+[functions.esign-webhook]
+verify_jwt = false
