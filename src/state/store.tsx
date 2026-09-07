@@ -33,24 +33,18 @@ import {
   upsertDocument,
   withdrawApplication
 } from './core';
-import { deleteDocumentBlob, getDocumentBlob, putDocumentBlob } from './indexedDb';
+import { clearDocumentBlobs, deleteDocumentBlob, getDocumentBlob, putDocumentBlob } from './indexedDb';
 import { useAuth } from '../auth/AuthContext';
 import { createDocumentUploadIntent, fetchBorrowerSnapshot, sendBorrowerCommand, type PlatformCommandResult } from '../services/platformApi';
 import { runtimeMode } from '../services/runtime';
 
-const STORAGE_KEY = 'pihub.borrower.v5';
-const LEGACY_STORAGE_KEYS = ['pihub.borrower.v4', 'pihub.borrower.v3', 'pihub.borrower.v2'];
 const COMMAND_RECONCILE_DELAY_MS = 4_000;
 
 function loadState(): BorrowerState {
-  if (runtimeMode() === 'api') return createInitialState();
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY) ?? LEGACY_STORAGE_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
-    if (!raw) return createInitialState();
-    return migrateState(JSON.parse(raw));
-  } catch {
-    return createInitialState();
-  }
+  // Both demo and API modes start from an in-memory state. API mode replaces it
+  // with the authenticated server snapshot; demo mode intentionally never restores
+  // borrower or document information from persistent browser storage.
+  return createInitialState();
 }
 
 interface StoreApi {
@@ -162,12 +156,14 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
     }
   }, [auth.status, clearReconciliationTimer, loadFromApi, mode]);
 
-  useEffect(() => () => clearReconciliationTimer(), [clearReconciliationTimer]);
+  useEffect(() => () => {
+    clearReconciliationTimer();
+    if (mode === 'demo') clearDocumentBlobs();
+  }, [clearReconciliationTimer, mode]);
 
   useEffect(() => {
-    if (mode === 'demo') localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     document.documentElement.lang = state.locale;
-  }, [mode, state]);
+  }, [state.locale]);
 
   const update = useCallback((fn: (current: BorrowerState) => BorrowerState) => setState((current) => fn(current)), []);
   const updateDemo = useCallback((fn: (current: BorrowerState) => BorrowerState) => {
@@ -195,9 +191,8 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
       if (connectionStatus === 'error') return 'Sync needs attention';
       return 'Synced with PiHub';
     }
-    const d = new Date(state.lastSavedAt);
-    return Number.isNaN(d.getTime()) ? 'Saved' : `Saved ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  }, [connectionStatus, mode, state.lastSavedAt]);
+    return 'Session only · cleared on refresh';
+  }, [connectionStatus, mode]);
 
   const api: StoreApi = {
     state,
@@ -294,7 +289,11 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
     feature: (action) => { updateDemo((s) => applyAdvancedAction(s, action)); dispatchCommand('borrower.feature', action as unknown as Record<string, unknown>, state.activeApplicationId); },
     updateProfile: (patch) => { update((s) => updateProfile(s, patch)); dispatchCommand('profile.update', { patch }); },
     setLocale: (locale) => { update((s) => setLocale(s, locale)); dispatchCommand('profile.locale.set', { locale }); },
-    resetDemo: () => { if (mode === 'demo') setState(createInitialState()); }
+    resetDemo: () => {
+      if (mode !== 'demo') return;
+      clearDocumentBlobs();
+      setState(createInitialState());
+    }
   };
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;
