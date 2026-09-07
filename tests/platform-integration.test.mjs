@@ -24,6 +24,30 @@ test('browser integration never embeds service credentials or bearer-token stora
   assert.match(client, /fetchBorrowerIntegrationProjection/);
 });
 
+test('api mode keeps privileged mutations server-authoritative', () => {
+  const store = read('src/state/store.tsx');
+  assert.match(store, /const updateDemo = useCallback/);
+  for (const command of [
+    'application.status.request',
+    'application.withdraw',
+    'organization.member.invite',
+    'organization.member.update',
+    'terms.decide',
+    'closing.item.set',
+    'servicing.request.create',
+    'servicing.request.withdraw',
+    'reporting.submit',
+    'payment.notice.create',
+    'privacy.request.create'
+  ]) {
+    const commandIndex = store.indexOf(`dispatchCommand('${command}'`);
+    assert.notEqual(commandIndex, -1, `${command} must remain wired to the server command API`);
+    const statementStart = store.lastIndexOf('\n    ', commandIndex);
+    const statement = store.slice(statementStart, commandIndex);
+    assert.match(statement, /updateDemo\(/, `${command} must not optimistically mutate authoritative API state`);
+  }
+});
+
 test('borrower UI consumes safe cross-module projections without regressing funded servicing', () => {
   const overview = read('src/pages/OverviewPage.tsx');
   const requests = read('src/pages/RequestsPage.tsx');
