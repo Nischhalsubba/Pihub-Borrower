@@ -106,7 +106,7 @@ create or replace function public.pihub_apply_signature_webhook(
   provider_payload_sha256 text,
   provider_recipients jsonb default '[]'::jsonb,
   provider_completed_at timestamptz default null,
-  provider_expires_at timestamptz default null
+  provider_expiration_at timestamptz default null
 )
 returns jsonb
 language plpgsql
@@ -115,7 +115,6 @@ set search_path = ''
 as $$
 declare
   target public.signature_envelopes%rowtype;
-  inserted_event_id uuid;
   recipient jsonb;
   next_status text;
 begin
@@ -142,6 +141,8 @@ begin
     raise exception 'unsupported_signature_event' using errcode = '22023';
   end if;
 
+  -- Lock the envelope before replay detection. All events for one envelope are
+  -- serialized, so a provider retry cannot apply state twice under concurrency.
   select * into target
   from public.signature_envelopes e
   where e.provider = 'documenso'
@@ -152,27 +153,10 @@ begin
     raise exception 'signature_envelope_not_found' using errcode = '22023';
   end if;
 
-  insert into public.signature_events(
-    envelope_id,
-    provider,
-    provider_event_id,
-    event_type,
-    provider_created_at,
-    payload_sha256,
-    applied_status
-  ) values (
-    target.id,
-    'documenso',
-    provider_event_key,
-    provider_event_name,
-    provider_event_created_at,
-    provider_payload_sha256,
-    target.status
-  )
-  on conflict (provider_event_id) do nothing
-  returning id into inserted_event_id;
-
-  if inserted_event_id is null then
+  if exists (
+    select 1 from public.signature_events e
+    where e.provider_event_id = provider_event_key
+  ) then
     return jsonb_build_object(
       'accepted', true,
       'duplicate', true,
@@ -223,22 +207,37 @@ begin
     end;
   end if;
 
-  update public.signature_envelopes
+  update public.signature_envelopes e
   set status = next_status,
       completed_at = case
-        when next_status = 'completed' then coalesce(provider_completed_at, completed_at, provider_event_created_at)
-        else completed_at
+        when next_status = 'completed' then coalesce(provider_completed_at, e.completed_at, provider_event_created_at)
+        else e.completed_at
       end,
-      provider_expires_at = coalesce(provider_expires_at, signature_envelopes.provider_expires_at),
+      provider_expires_at = coalesce(provider_expiration_at, e.provider_expires_at),
       last_provider_event_at = greatest(
-        coalesce(signature_envelopes.last_provider_event_at, provider_event_created_at),
+        coalesce(e.last_provider_event_at, provider_event_created_at),
         provider_event_created_at
       )
-  where id = target.id;
+  where e.id = target.id;
 
-  -- Immutable rows cannot be updated after insertion, so the event records the
-  -- status that existed when it was accepted. The current authoritative status
-  -- is returned separately and remains queryable from signature_envelopes.
+  insert into public.signature_events(
+    envelope_id,
+    provider,
+    provider_event_id,
+    event_type,
+    provider_created_at,
+    payload_sha256,
+    applied_status
+  ) values (
+    target.id,
+    'documenso',
+    provider_event_key,
+    provider_event_name,
+    provider_event_created_at,
+    provider_payload_sha256,
+    next_status
+  );
+
   return jsonb_build_object(
     'accepted', true,
     'duplicate', false,
