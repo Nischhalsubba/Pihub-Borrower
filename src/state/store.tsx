@@ -170,6 +170,9 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
   }, [mode, state]);
 
   const update = useCallback((fn: (current: BorrowerState) => BorrowerState) => setState((current) => fn(current)), []);
+  const updateDemo = useCallback((fn: (current: BorrowerState) => BorrowerState) => {
+    if (mode === 'demo') setState((current) => fn(current));
+  }, [mode]);
   const dispatchCommand = useCallback((command: string, payload: Record<string, unknown>, aggregateId?: string) => {
     if (mode !== 'api' || auth.status !== 'authenticated') return;
     setConnectionStatus('syncing');
@@ -206,13 +209,13 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
     app,
     completion,
     saveLabel,
-    createApplication: (name, productId) => { update((s) => createApplication(s, { name, productId })); dispatchCommand('application.create', { name, productId: productId ?? null }); },
+    createApplication: (name, productId) => { updateDemo((s) => createApplication(s, { name, productId })); dispatchCommand('application.create', { name, productId: productId ?? null }); },
     setActiveApplication: (applicationId) => update((s) => setActiveApplication(s, applicationId)),
-    createDraftFromVersion: (versionId) => { update((s) => createDraftFromVersion(s, versionId)); dispatchCommand('application.create_from_version', { versionId }); },
-    withdrawApplication: (applicationId) => { update((s) => withdrawApplication(s, applicationId)); dispatchCommand('application.withdraw', {}, applicationId); },
+    createDraftFromVersion: (versionId) => { updateDemo((s) => createDraftFromVersion(s, versionId)); dispatchCommand('application.create_from_version', { versionId }); },
+    withdrawApplication: (applicationId) => { updateDemo((s) => withdrawApplication(s, applicationId)); dispatchCommand('application.withdraw', {}, applicationId); },
     updateSection: (section, patch, complete = true) => { const applicationId = state.activeApplicationId; update((s) => updateApplicationSection(s, section, patch, complete)); dispatchCommand('application.section.update', { section, patch: patch as Record<string, unknown>, complete }, applicationId); },
-    submitApplication: () => { const applicationId = state.activeApplicationId; const currentApp = activeApplication(state); const ready = completionPercentage(currentApp, state.documents) === 100 && workflowReadiness(state, applicationId).ready; if (!ready || currentApp.status !== 'draft') return; if (mode === 'demo') update((s) => setApplicationStatus(s, 'submitted')); dispatchCommand('application.submit', {}, applicationId); },
-    setApplicationStatus: (status) => { const applicationId = state.activeApplicationId; update((s) => setApplicationStatus(s, status)); dispatchCommand('application.status.request', { status }, applicationId); },
+    submitApplication: () => { const applicationId = state.activeApplicationId; const currentApp = activeApplication(state); const ready = completionPercentage(currentApp, state.documents) === 100 && workflowReadiness(state, applicationId).ready; if (!ready || currentApp.status !== 'draft') return; updateDemo((s) => setApplicationStatus(s, 'submitted')); dispatchCommand('application.submit', {}, applicationId); },
+    setApplicationStatus: (status) => { const applicationId = state.activeApplicationId; updateDemo((s) => setApplicationStatus(s, status)); dispatchCommand('application.status.request', { status }, applicationId); },
     uploadDocument: async (file, category, replaceId) => {
       if (mode === 'api') {
         setConnectionStatus('syncing');
@@ -273,22 +276,22 @@ export function BorrowerStoreProvider({ children }: { children: React.ReactNode 
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       return true;
     },
-    respondToRequest: (requestId, text, attachments = []) => { update((s) => respondToRequest(s, requestId, text, attachments)); dispatchCommand('request.respond', { text, attachmentDocumentIds: attachments }, requestId); },
+    respondToRequest: (requestId, text, attachments = []) => { updateDemo((s) => respondToRequest(s, requestId, text, attachments)); dispatchCommand('request.respond', { text, attachmentDocumentIds: attachments }, requestId); },
     markNotificationRead: (notificationId) => { update((s) => markNotificationRead(s, notificationId)); dispatchCommand(notificationId ? 'notification.read' : 'notification.read_all', notificationId ? { notificationId } : {}); },
-    inviteTeamMember: (input) => { update((s) => inviteTeamMember(s, input)); dispatchCommand('organization.member.invite', input as unknown as Record<string, unknown>, state.organization.id); },
-    resendTeamInvitation: (memberId) => { update((s) => resendTeamInvitation(s, memberId)); dispatchCommand('organization.member.invitation.resend', { memberId }, state.organization.id); },
-    updateTeamMember: (memberId, patch) => { update((s) => updateTeamMember(s, memberId, patch)); dispatchCommand('organization.member.update', { memberId, patch }, state.organization.id); },
-    decideTerm: (termId, decision) => { update((s) => decideTermSheet(s, termId, decision)); dispatchCommand('terms.decide', { decision }, termId); },
-    toggleClosingItem: (itemId, complete) => { update((s) => toggleClosingItem(s, itemId, complete)); dispatchCommand('closing.item.set', { complete }, itemId); },
+    inviteTeamMember: (input) => { updateDemo((s) => inviteTeamMember(s, input)); dispatchCommand('organization.member.invite', input as unknown as Record<string, unknown>, state.organization.id); },
+    resendTeamInvitation: (memberId) => { updateDemo((s) => resendTeamInvitation(s, memberId)); dispatchCommand('organization.member.invitation.resend', { memberId }, state.organization.id); },
+    updateTeamMember: (memberId, patch) => { updateDemo((s) => updateTeamMember(s, memberId, patch)); dispatchCommand('organization.member.update', { memberId, patch }, state.organization.id); },
+    decideTerm: (termId, decision) => { updateDemo((s) => decideTermSheet(s, termId, decision)); dispatchCommand('terms.decide', { decision }, termId); },
+    toggleClosingItem: (itemId, complete) => { updateDemo((s) => toggleClosingItem(s, itemId, complete)); dispatchCommand('closing.item.set', { complete }, itemId); },
     toggleSavedProduct: (productId) => { update((s) => toggleSavedProduct(s, productId)); dispatchCommand('preference.product.saved.toggle', { productId }); },
     toggleComparedProduct: (productId) => { update((s) => toggleComparedProduct(s, productId)); dispatchCommand('preference.product.compare.toggle', { productId }); },
-    createSupportTicket: (input) => { update((s) => createSupportTicket(s, input)); dispatchCommand('support.request.create', input as unknown as Record<string, unknown>, state.activeApplicationId); },
-    createServicingRequest: (input) => { update((s) => createServicingRequest(s, input)); dispatchCommand('servicing.request.create', input as unknown as Record<string, unknown>, input.facilityId); },
-    withdrawServicingRequest: (requestId) => { update((s) => withdrawServicingRequest(s, requestId)); dispatchCommand('servicing.request.withdraw', {}, requestId); },
-    submitReportingObligation: (obligationId, documentId) => { update((s) => submitReportingObligation(s, obligationId, documentId)); dispatchCommand('reporting.submit', { documentId: documentId ?? null }, obligationId); },
-    reportPaymentMade: (paymentId, note) => { update((s) => reportPaymentMade(s, paymentId, note)); dispatchCommand('payment.notice.create', { note }, paymentId); },
-    createPrivacyRequest: (type, note = '') => { update((s) => createPrivacyRequest(s, type, note)); dispatchCommand('privacy.request.create', { type, note }, state.organization.id); },
-    feature: (action) => { if (mode === 'demo') update((s) => applyAdvancedAction(s, action)); dispatchCommand('borrower.feature', action as unknown as Record<string, unknown>, state.activeApplicationId); },
+    createSupportTicket: (input) => { updateDemo((s) => createSupportTicket(s, input)); dispatchCommand('support.request.create', input as unknown as Record<string, unknown>, state.activeApplicationId); },
+    createServicingRequest: (input) => { updateDemo((s) => createServicingRequest(s, input)); dispatchCommand('servicing.request.create', input as unknown as Record<string, unknown>, input.facilityId); },
+    withdrawServicingRequest: (requestId) => { updateDemo((s) => withdrawServicingRequest(s, requestId)); dispatchCommand('servicing.request.withdraw', {}, requestId); },
+    submitReportingObligation: (obligationId, documentId) => { updateDemo((s) => submitReportingObligation(s, obligationId, documentId)); dispatchCommand('reporting.submit', { documentId: documentId ?? null }, obligationId); },
+    reportPaymentMade: (paymentId, note) => { updateDemo((s) => reportPaymentMade(s, paymentId, note)); dispatchCommand('payment.notice.create', { note }, paymentId); },
+    createPrivacyRequest: (type, note = '') => { updateDemo((s) => createPrivacyRequest(s, type, note)); dispatchCommand('privacy.request.create', { type, note }, state.organization.id); },
+    feature: (action) => { updateDemo((s) => applyAdvancedAction(s, action)); dispatchCommand('borrower.feature', action as unknown as Record<string, unknown>, state.activeApplicationId); },
     updateProfile: (patch) => { update((s) => updateProfile(s, patch)); dispatchCommand('profile.update', { patch }); },
     setLocale: (locale) => { update((s) => setLocale(s, locale)); dispatchCommand('profile.locale.set', { locale }); },
     resetDemo: () => { if (mode === 'demo') setState(createInitialState()); }
