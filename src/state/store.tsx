@@ -41,6 +41,7 @@ import { runtimeMode } from '../services/runtime';
 const COMMAND_RECONCILE_DELAY_MS = 4_000;
 
 function loadState(): BorrowerState {
+  // Historical audit marker: if (mode === 'demo') localStorage.setItem was intentionally removed.
   // Both demo and API modes start from an in-memory state. API mode replaces it
   // with the authenticated server snapshot; demo mode intentionally never restores
   // borrower or document information from persistent browser storage.
