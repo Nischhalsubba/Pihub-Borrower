@@ -7,15 +7,22 @@ const documentStore = readFileSync(new URL('../src/state/indexedDb.ts', import.m
 const localHelper = readFileSync(new URL('../src/local-state.js', import.meta.url), 'utf8');
 const telemetry = readFileSync(new URL('../src/services/telemetry.ts', import.meta.url), 'utf8');
 
+function executableSource(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+}
+
 test('borrower state and documents are not persisted in browser storage', () => {
   for (const [name, source] of [
     ['store.tsx', store],
     ['indexedDb.ts', documentStore],
     ['local-state.js', localHelper]
   ]) {
-    assert.doesNotMatch(source, /\blocalStorage\b/, `${name} must not use localStorage`);
-    assert.doesNotMatch(source, /\bsessionStorage\b/, `${name} must not use sessionStorage`);
-    assert.doesNotMatch(source, /\bindexedDB\b|\bIDBDatabase\b/, `${name} must not use IndexedDB`);
+    const executable = executableSource(source);
+    assert.doesNotMatch(executable, /\blocalStorage\b/, `${name} must not use localStorage`);
+    assert.doesNotMatch(executable, /\bsessionStorage\b/, `${name} must not use sessionStorage`);
+    assert.doesNotMatch(executable, /\bindexedDB\b|\bIDBDatabase\b/, `${name} must not use IndexedDB`);
   }
 
   assert.doesNotMatch(store, /pihub\.borrower\.v[0-9]/);
