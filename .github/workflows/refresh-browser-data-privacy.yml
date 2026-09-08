@@ -1,0 +1,39 @@
+name: Refresh browser data privacy branch
+
+on:
+  push:
+    branches:
+      - remediation/browser-data-privacy-current-20260908
+    paths:
+      - .github/workflows/refresh-browser-data-privacy.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Refresh reviewed privacy patch onto current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin remediation/browser-data-privacy
+          git checkout origin/remediation/browser-data-privacy -- \
+            docs/BROWSER_DATA_PRIVACY.md \
+            package.json \
+            src/local-state.js \
+            src/local-state.test.js \
+            src/services/telemetry.ts \
+            src/state/indexedDb.ts \
+            src/state/store.tsx \
+            tests/browser-data-privacy.test.mjs
+          git rm .github/workflows/refresh-browser-data-privacy.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/BROWSER_DATA_PRIVACY.md package.json src/local-state.js src/local-state.test.js src/services/telemetry.ts src/state/indexedDb.ts src/state/store.tsx tests/browser-data-privacy.test.mjs
+          git commit -m "security: refresh browser data privacy on current main"
+          git push origin HEAD:remediation/browser-data-privacy-current-20260908
