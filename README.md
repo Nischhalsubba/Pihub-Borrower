@@ -86,6 +86,21 @@ Apache Fineract and Temporal are documented integration candidates rather than s
 - route lazy loading
 - no decorative Three.js/GSAP/WebGL in finance workflows
 
+## Local development
+
+The React/Vite application runs from the repository root. Install Node.js and npm, then use the committed `package-lock.json` for repeatable local dependencies:
+
+```bash
+git clone https://github.com/Nischhalsubba/Pihub-Borrower.git
+cd Pihub-Borrower
+npm ci
+npm run dev
+```
+
+For a local demo, set `VITE_PIHUB_RUNTIME=demo` in a local `.env` file based on [`.env.example`](./.env.example). Do not put real credentials or provider secrets in `VITE_` variables: they are exposed to the browser. The API runtime requires an appropriately configured backend (see [`INTEGRATION.md`](./INTEGRATION.md)); merely switching the mode does not provision that backend.
+
+Before proposing changes, run `npm test` for type-check and domain/static tests, followed by `npm run build` for a production bundle. Browser tests use `npm run test:e2e` after the required Playwright browsers and services are configured. See [`VALIDATION.md`](./VALIDATION.md) for current verification scope.
+
 ## Runtime configuration
 
 ```text
