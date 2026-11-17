@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 interface ImportMetaEnv {
   readonly VITE_PIHUB_RUNTIME?: 'demo' | 'api';
   readonly VITE_PIHUB_API_BASE_URL?: string;
