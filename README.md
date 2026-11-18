@@ -136,3 +136,7 @@ Dependency-backed Vite build and real Playwright/Axe browser execution remain re
 - `design-dna/BORROWER_DNA.md`
 - `supabase/migrations/0001_pihub_platform.sql`
 - `supabase/migrations/0002_borrower_v05_advanced_features.sql`
+
+## Maintainer review checklist
+
+Before changing critical product behavior or public claims, use the [Borrower application and servicing acceptance](docs/BORROWER_APPLICATION_ACCEPTANCE.md) to record evidence, verification and rollback expectations.
